@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "ResearchFeatureEngine/1.0.0": {
+        "dependencies": {
+          "cAlgo.API": "1.0.0"
+        },
+        "runtime": {
+          "ResearchFeatureEngine.dll": {}
+        }
+      },
+      "cAlgo.API/1.0.0": {
+        "runtime": {
+          "lib/netstandard2.0/cAlgo.API.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "ResearchFeatureEngine/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "cAlgo.API/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2arZiZ81TGDhKw3V9hqZHQD3p9LUNsfLDXKz5L7MLMOQYi4OwZZn0C72R1qUnGwTIv9AptOuqoHOoa8RHHeUAQ==",
+      "path": "calgo.api/1.0.0",
+      "hashPath": "calgo.api.1.0.0.nupkg.sha512"
+    }
+  }
+}

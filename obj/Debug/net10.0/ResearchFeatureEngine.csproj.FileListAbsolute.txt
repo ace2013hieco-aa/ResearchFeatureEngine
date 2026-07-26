@@ -1,0 +1,12 @@
+D:\Software\Distance\bin\Debug\net10.0\ResearchFeatureEngine.deps.json
+D:\Software\Distance\bin\Debug\net10.0\ResearchFeatureEngine.dll
+D:\Software\Distance\bin\Debug\net10.0\ResearchFeatureEngine.pdb
+D:\Software\Distance\obj\Debug\net10.0\ResearchFeatureEngine.csproj.AssemblyReference.cache
+D:\Software\Distance\obj\Debug\net10.0\ResearchFeatureEngine.GeneratedMSBuildEditorConfig.editorconfig
+D:\Software\Distance\obj\Debug\net10.0\ResearchFeatureEngine.AssemblyInfoInputs.cache
+D:\Software\Distance\obj\Debug\net10.0\ResearchFeatureEngine.AssemblyInfo.cs
+D:\Software\Distance\obj\Debug\net10.0\ResearchFeatureEngine.csproj.CoreCompileInputs.cache
+D:\Software\Distance\obj\Debug\net10.0\ResearchFeatureEngine.dll
+D:\Software\Distance\obj\Debug\net10.0\refint\ResearchFeatureEngine.dll
+D:\Software\Distance\obj\Debug\net10.0\ResearchFeatureEngine.pdb
+D:\Software\Distance\obj\Debug\net10.0\ref\ResearchFeatureEngine.dll
