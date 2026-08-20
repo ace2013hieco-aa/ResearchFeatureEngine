@@ -1,0 +1,55 @@
+# Build artifacts ------------------------------------------------------------
+
+# Default SDK build output
+bin/
+obj/
+out/
+
+# Old/stale leftovers from mixed-target framework builds
+Debug_disabled_archive/
+_stale_*/
+obj_disabled_archive/
+.worktrees/
+
+# Disabled (renamed) source files
+*.cs.disabled
+
+# User-provided reference project — not part of the deliverable
+ATRsmooth2/
+
+# IDE -------------------------------------------------------------------------
+
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.sdf
+*.cachefile
+
+# OS --------------------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NuGet -----------------------------------------------------------------------
+
+*.nupkg
+**/project.assets.json
+**/project.nuget.cache
+
+# Coverage --------------------------------------------------------------------
+
+*.coverage
+*.coveragexml
+**/.msCoverageSourceRootsMapping_*
+**/CoverletSourceRootsMapping_*
+**/coverage.*.xml
+
+# Misc ------------------------------------------------------------------------
+
+*.tmp
+*.bak
+*.orig
+*.rej

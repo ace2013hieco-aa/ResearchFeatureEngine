@@ -1,0 +1,48 @@
+## Diagnostic Report: Flat Line at Zero
+
+### Instrumentation Added
+
+A `Print(...)` call was inserted into `Calculate(int index)` logging: chart index, engine CurrentIndex, Close price, Reference.Price, Distance.AbsoluteExtension, Scale.Scale, Normalization.NormalizedMeasurement.
+
+### Root Cause — First Failing Stage: **Reference**
+
+The `ATRSmoothReferenceModel` is initialized with `Bars.ClosePrices`:
+```csharp
+var priceSeries = new CTraderPriceSeries(Bars.ClosePrices);
+IReferenceModel referenceModel = new ATRSmoothReferenceModel(priceSeries);
+```
+
+But `ATRSmoothReferenceModel.Compute(int index)` does no computation — it simply returns the raw value from the supplied series:
+```csharp
+public double Compute(int index) => _referenceSeries[index];
+```
+
+Since `_referenceSeries` **is `Bars.ClosePrices`**, this produces:
+
+```
+Reference.Price = close[index]
+```
+
+Then in `ReferenceDistanceModel.Compute()`:
+```csharp
+double price = _marketData.Close[index];   // = close[index]
+return price - referencePrice;              // = close[index] - close[index] = 0
+```
+
+**Distance is always zero.** This zero propagates through the entire chain:
+- **Scale** → computes ATR (non-zero, correct)
+- **Normalization** → `0 / scale = 0`
+- **Plot** → flat line at zero
+
+### Summary
+
+| Stage | Produces changing values? | Why |
+|---|---|---|
+| **Reference** | **No** — always equals raw close price | Fed `Bars.ClosePrices` instead of a smoothed/computed reference series |
+| Distance | **No** — always zero | `close - close = 0` |
+| Scale | **Yes** | Computes ATR independently from market data |
+| Normalization | **No** — always zero | `0 / scale = 0` |
+| Statistics | **Yes** | Operates on close prices directly, independent of the chain |
+
+**First failing stage: Reference.** `ATRSmoothReferenceModel` receives `Bars.ClosePrices` (raw closes) when it needs a precomputed ATR-smoothed series. This causes Reference.Price to equal Close price, producing zero distance and zero normalized output.
+
