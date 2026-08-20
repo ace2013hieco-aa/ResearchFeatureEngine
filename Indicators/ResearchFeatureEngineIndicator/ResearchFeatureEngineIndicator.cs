@@ -152,10 +152,15 @@ namespace ResearchFeatureEngine.Indicators
 
             // ---------------------------------------------------------
             // Drive the production pipeline for the current bar.
-            // The engine's Update() advances the shared CurrentIndex
-            // by 1, matching cTrader's left-to-right bar processing.
+            // ProcessAt(index) sets the shared CurrentIndex to the
+            // cTrader-supplied bar index and runs the pipeline WITHOUT
+            // auto-advancing. This is essential for live tick handling:
+            // cTrader calls Calculate(currentIndex) once per tick on
+            // the most-recent bar until that bar closes; auto-advance
+            // would drift the engine past the bar and re-compute the
+            // WRONG index's values for the same display bar.
             // ---------------------------------------------------------
-            _engine.Update();
+            _engine.ProcessAt(index);
 
             // ---------------------------------------------------------
             // Publish to cTrader outputs.

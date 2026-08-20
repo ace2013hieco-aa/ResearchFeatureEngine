@@ -37,6 +37,40 @@ namespace ResearchFeatureEngine.Reference.Sources
     /// </summary>
     public sealed class ATRSmoothReferenceSource : ReferenceSourceBase
     {
+        // ---------------------------------------------------------
+        // Re-tick snapshot
+        // ---------------------------------------------------------
+        //
+        // The source has stateful incremental computation (rolling
+        // VWMA sums, EMA of True Range, ATR trailing stop, position
+        // bias). In a backtest each Update() call processes a fresh
+        // bar, so the state is simply "after bar N" between calls.
+        //
+        // In a live streaming consumer (cTrader indicator) Update()
+        // is called REPEATEDLY for the same bar index as new ticks
+        // arrive on the most-recent bar, before the bar closes. Each
+        // call must produce the same reference value as long as the
+        // bar's market data hasn't changed (determinism), and must
+        // reflect the latest market data when it has.
+        //
+        // Without a snapshot, the second tick on bar N would
+        // double-count the bar's contribution to the VWMA sum and
+        // drift the EMA / trailing stop past bar N.
+        //
+        // The fix: snapshot the state on the first call for a given
+        // bar, restore on subsequent calls for the same bar, then
+        // run the normal computation. After the computation the
+        // state is "after bar N" with the latest data, ready for the
+        // next tick.
+        // ---------------------------------------------------------
+
+        private double _snapshotEmaTrueRange;
+        private double _snapshotTrailingStop;
+        private double _snapshotPosition;
+        private double _snapshotSumPV;
+        private double _snapshotSumV;
+        private int _snapshotIndex = int.MinValue;
+
         /// <summary>
         /// Initializes a new instance of the
         /// <see cref="ATRSmoothReferenceSource"/> class.
@@ -56,10 +90,52 @@ namespace ResearchFeatureEngine.Reference.Sources
             (ATRSmoothConfiguration)base.Configuration;
 
         /// <inheritdoc />
+        public override void Reset()
+        {
+            base.Reset();
+            _snapshotIndex = int.MinValue;
+        }
+
+        /// <inheritdoc />
         protected override double ComputeReference(EngineContext context, int index)
         {
             var cfg = Configuration;
             var md = context.MarketData!;
+
+            //--------------------------------------------------
+            // Re-tick handling
+            //--------------------------------------------------
+            // Live streaming consumers (cTrader indicator) re-call
+            // Update() for the same bar as ticks arrive. We need
+            // the computation to be idempotent for a fixed bar
+            // index: snapshot the state before this bar's update,
+            // and restore it if the caller is re-processing the
+            // same bar.
+
+            if (_snapshotIndex == index)
+            {
+                // Re-tick: restore the state captured at the start
+                // of this bar so the rolling sum / EMA / trailing
+                // stop are recomputed from a clean baseline.
+                Runtime.EmaTrueRange = _snapshotEmaTrueRange;
+                Runtime.TrailingStop = _snapshotTrailingStop;
+                Runtime.Position     = _snapshotPosition;
+                Runtime.SumPV         = _snapshotSumPV;
+                Runtime.SumV          = _snapshotSumV;
+            }
+            else
+            {
+                // First call for this bar: snapshot the state at
+                // the end of the previous bar (or initial state
+                // when index == 0).
+                _snapshotEmaTrueRange = Runtime.EmaTrueRange;
+                _snapshotTrailingStop = Runtime.TrailingStop;
+                _snapshotPosition     = Runtime.Position;
+                _snapshotSumPV         = Runtime.SumPV;
+                _snapshotSumV          = Runtime.SumV;
+                _snapshotIndex         = index;
+            }
+
 
             //--------------------------------------------------
             // Inputs at current index

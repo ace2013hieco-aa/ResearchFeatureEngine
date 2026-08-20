@@ -47,7 +47,7 @@ namespace ResearchFeatureEngine.Reference
         }
 
         /// <inheritdoc />
-        public void Reset()
+        public virtual void Reset()
         {
             Runtime.Reset();
         }
