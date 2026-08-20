@@ -32,9 +32,9 @@ namespace ResearchFeatureEngine.Indicators
     ///     → Indicator outputs.
     /// </summary>
     [Indicator(
-        IsOverlay = true,
+        IsOverlay = false,
         AccessRights = AccessRights.None,
-        AutoRescale = false)]
+        AutoRescale = true)]
     public class ResearchFeatureEngineIndicator : Indicator
     {
         // ---------------------------------------------------------

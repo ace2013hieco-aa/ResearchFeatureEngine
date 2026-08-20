@@ -30,6 +30,9 @@
     <Compile Remove="Indicators\**" />
     <EmbeddedResource Remove="Indicators\**" />
     <None Remove="Indicators\**" />
+    <Compile Remove="tools\**" />
+    <EmbeddedResource Remove="tools\**" />
+    <None Remove="tools\**" />
     <Compile Remove="bin\**" />
     <EmbeddedResource Remove="bin\**" />
     <None Remove="bin\**" />
