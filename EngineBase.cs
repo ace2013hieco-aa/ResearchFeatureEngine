@@ -72,7 +72,7 @@ namespace ResearchFeatureEngine.Core
         /// <summary>
         /// Resets the engine.
         /// </summary>
-        public void Reset()
+        public virtual void Reset()
         {
             Trace.SetStage(ExecutionStage.Resetting);
 

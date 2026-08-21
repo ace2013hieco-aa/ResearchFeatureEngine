@@ -23,8 +23,14 @@ namespace ResearchFeatureEngine.Tests
         /// Scale model: ATRScaleModel(period = 14) — simple average of
         /// True Range over the trailing 14 bars.
         ///
+        /// Live-bar handling: the rolling statistics window holds
+        /// CLOSED bars only. The most-recent bar (index 19, the last
+        /// bar processed by Update()) is held aside as the live bar
+        /// and is not yet in the window. So the statistics window
+        /// contains the first 19 closes: 100, 102, ..., 136.
+        ///
         /// Expected values correspond to the state after processing
-        /// the last bar (index 19).
+        /// the last bar (index 19) via Update().
         ///
         /// These values were produced by the standalone reference
         /// program in <c>bin/ComputeExpected</c>, which mirrors the
@@ -53,22 +59,25 @@ namespace ResearchFeatureEngine.Tests
             // Normalization = absolute / scale
             expected.Normalization.NormalizedMeasurement = 6.249102314835964;
 
-            // Statistics over the 20 closes
-            //   mean = (100 + 138) / 2 = 119
-            //   variance = sum((c - 119)^2) / (n - 1) = 140
-            //   stddev = sqrt(140) = 11.8321595661992
-            //   median = (118 + 120) / 2 = 119
-            //   MAD = median of |c - 119| = 10
-            expected.Statistics.Location.Mean = 119.0;
-            expected.Statistics.Location.Median = 119.0;
-            expected.Statistics.Dispersion.Variance = 140.0;
+            // Statistics over the 19 closed closes (live bar held aside)
+            //   mean   = (100 + 136) / 2 = 118
+            //   var    = sum((c - 118)^2) / (n - 1) = 126.66666666666667
+            //   stddev = sqrt(var) = 11.254628677422755
+            //   median = index 9 of sorted [100,102,...,136] = 118
+            //   MAD    = median of |c - 118| = 10
+            //   min    = 100
+            //   max    = 136  (138 is the live bar; not in the window)
+            expected.Statistics.Location.Mean = 118.0;
+            expected.Statistics.Location.Median = 118.0;
+            expected.Statistics.Dispersion.Variance =
+                126.66666666666667;
             expected.Statistics.Dispersion.StandardDeviation =
-                Math.Sqrt(140.0);
+                Math.Sqrt(126.66666666666667);
             expected.Statistics.Dispersion.MedianAbsoluteDeviation = 10.0;
 
-            // Range of closes
+            // Range of closed-bar closes
             expected.Statistics.Range.Minimum = 100.0;
-            expected.Statistics.Range.Maximum = 138.0;
+            expected.Statistics.Range.Maximum = 136.0;
 
             return expected;
         }
