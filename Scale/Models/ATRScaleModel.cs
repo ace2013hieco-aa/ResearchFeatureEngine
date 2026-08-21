@@ -20,8 +20,12 @@ namespace ResearchFeatureEngine.Scale.Models
 
         public double Compute(EngineContext context)
         {
+            var marketData = context.MarketData
+                ?? throw new InvalidOperationException(
+                    "Scale model requires a non-null market data adapter.");
+
             if (context.Index < 1)
-                return context.MarketData.Close[0];
+                return marketData.Close[0];
 
             int start = Math.Max(1, context.Index - _period + 1);
 
@@ -30,9 +34,9 @@ namespace ResearchFeatureEngine.Scale.Models
 
             for (int i = start; i <= context.Index; i++)
             {
-                double high = context.MarketData.High[i];
-                double low = context.MarketData.Low[i];
-                double previousClose = context.MarketData.Close[i - 1];
+                double high = marketData.High[i];
+                double low = marketData.Low[i];
+                double previousClose = marketData.Close[i - 1];
 
                 double trueRange = Math.Max(
                     high - low,
@@ -44,7 +48,7 @@ namespace ResearchFeatureEngine.Scale.Models
                 count++;
             }
 
-            return count > 0 ? sum / count : context.MarketData.Close[0];
+            return count > 0 ? sum / count : marketData.Close[0];
         }
     }
 }

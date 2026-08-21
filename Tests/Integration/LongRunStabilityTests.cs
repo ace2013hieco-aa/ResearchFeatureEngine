@@ -105,9 +105,11 @@ namespace ResearchFeatureEngine.Tests.Integration
             Assert.True(
                 engine.Values.Statistics.ObservationCount > 0);
 
+            // The committed closed-bar window plus the appended live
+            // bar => at most windowSize + 1 observations.
             Assert.True(
                 engine.Values.Statistics.ObservationCount <=
-                configuration.Options.StatisticsWindowSize);
+                configuration.Options.StatisticsWindowSize + 1);
         }
     }
 }

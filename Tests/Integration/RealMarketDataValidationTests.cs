@@ -79,9 +79,11 @@ namespace ResearchFeatureEngine.Tests.Integration
                     NumericAssert.IsFinite(
                         engine.Values.Statistics.Range.Maximum);
 
+                    // Committed closed-bar window + appended live bar
+                    // => at most windowSize + 1 observations.
                     Assert.True(
                         engine.Values.Statistics.ObservationCount <=
-                        configuration.Options.StatisticsWindowSize);
+                        configuration.Options.StatisticsWindowSize + 1);
                 }
             }
 
@@ -135,9 +137,11 @@ namespace ResearchFeatureEngine.Tests.Integration
             NumericAssert.IsFinite(
                 engine.Values.Statistics.Range.Maximum);
 
+            // Committed closed-bar window + appended live bar
+            // => at most windowSize + 1 observations.
             Assert.True(
                 engine.Values.Statistics.ObservationCount <=
-                configuration.Options.StatisticsWindowSize);
+                configuration.Options.StatisticsWindowSize + 1);
         }
     }
 }

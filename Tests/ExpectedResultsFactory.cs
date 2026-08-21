@@ -24,10 +24,13 @@ namespace ResearchFeatureEngine.Tests
         /// True Range over the trailing 14 bars.
         ///
         /// Live-bar handling: the rolling statistics window holds
-        /// CLOSED bars only. The most-recent bar (index 19, the last
-        /// bar processed by Update()) is held aside as the live bar
-        /// and is not yet in the window. So the statistics window
-        /// contains the first 19 closes: 100, 102, ..., 136.
+        /// CLOSED bars, and the live (still-forming) bar's latest
+        /// close is appended to the observations on every tick. The
+        /// last bar processed by Update() is the live bar (index 19,
+        /// close 138), so the statistics observations are all 20
+        /// closes: 100, 102, ..., 138. This is current-bar-inclusive,
+        /// matching the other pipeline stages and the reference
+        /// indicator.
         ///
         /// Expected values correspond to the state after processing
         /// the last bar (index 19) via Update().
@@ -59,25 +62,25 @@ namespace ResearchFeatureEngine.Tests
             // Normalization = absolute / scale
             expected.Normalization.NormalizedMeasurement = 6.249102314835964;
 
-            // Statistics over the 19 closed closes (live bar held aside)
-            //   mean   = (100 + 136) / 2 = 118
-            //   var    = sum((c - 118)^2) / (n - 1) = 126.66666666666667
-            //   stddev = sqrt(var) = 11.254628677422755
-            //   median = index 9 of sorted [100,102,...,136] = 118
-            //   MAD    = median of |c - 118| = 10
+            // Statistics over all 20 closes (live bar included)
+            //   mean   = (100 + 138) / 2 = 119
+            //   var    = sum((c - 119)^2) / (n - 1) = 140
+            //   stddev = sqrt(140) = 11.832159566199232
+            //   median = avg of 10th/11th of sorted [100,102,...,138] = 119
+            //   MAD    = median of |c - 119| = 10
             //   min    = 100
-            //   max    = 136  (138 is the live bar; not in the window)
-            expected.Statistics.Location.Mean = 118.0;
-            expected.Statistics.Location.Median = 118.0;
+            //   max    = 138
+            expected.Statistics.Location.Mean = 119.0;
+            expected.Statistics.Location.Median = 119.0;
             expected.Statistics.Dispersion.Variance =
-                126.66666666666667;
+                140.0;
             expected.Statistics.Dispersion.StandardDeviation =
-                Math.Sqrt(126.66666666666667);
+                Math.Sqrt(140.0);
             expected.Statistics.Dispersion.MedianAbsoluteDeviation = 10.0;
 
-            // Range of closed-bar closes
+            // Range of all closes (live bar included)
             expected.Statistics.Range.Minimum = 100.0;
-            expected.Statistics.Range.Maximum = 136.0;
+            expected.Statistics.Range.Maximum = 138.0;
 
             return expected;
         }

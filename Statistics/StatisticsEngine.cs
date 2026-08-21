@@ -16,12 +16,22 @@ namespace ResearchFeatureEngine.Statistics
     /// measurement) by design — the distribution of the normalized
     /// feature is a distinct concern for a downstream stage.
     ///
-    /// Live-bar handling: the rolling window is kept over CLOSED
-    /// bars only. When a new bar is seen, the previously-live bar's
-    /// close is committed to the window. Re-ticks on the live bar
-    /// update a held-aside value but do not modify the window, so
-    /// the mean / std dev for the most-recent bar stays stable
-    /// across ticks instead of flickering.
+    /// Current-bar-inclusive semantics: the rolling window holds the
+    /// last N CLOSED bars, and the live (still-forming) bar's latest
+    /// close is appended to the observations on every tick so the
+    /// published mean / std dev respond to the live bar exactly like
+    /// every other stage of the pipeline (Reference, Distance, Scale,
+    /// Normalization) and like the transcribed reference indicator
+    /// <c>AtrTrailingStopSmoothed</c>, which include the current bar
+    /// in all of their rolling sums.
+    ///
+    /// Live re-ticks: the committed window is never mutated by a
+    /// re-tick on the same bar; only the held-aside live close is
+    /// refreshed, so there is no double-counting and the statistics
+    /// are recomputed from a stable closed-bar base + the latest live
+    /// close. When the bar closes and a new bar opens, the final live
+    /// close is committed to the window (rolling out the oldest
+    /// closed bar), and the new bar becomes the live bar.
     /// </summary>
     public sealed class StatisticsEngine : EngineBase
     {
@@ -33,7 +43,9 @@ namespace ResearchFeatureEngine.Statistics
 
         // Live-bar tracking. _lastSeenIndex is the highest bar index
         // processed so far; the bar at _lastSeenIndex is the current
-        // live (still-forming) bar. _liveBarClose is its latest close.
+        // live (still-forming) bar. _liveBarClose is its latest close
+        // and is appended to (not committed into) the closed-bar
+        // window for per-tick computation.
         private int _lastSeenIndex = -1;
         private double _liveBarClose;
 
@@ -58,7 +70,7 @@ namespace ResearchFeatureEngine.Statistics
             _validator = new StatisticsValidator();
 
             _publisher = new StatisticsPublisher(
-                Context.Values!.Statistics);
+                Context.Values.Statistics);
 
             _models = models as IReadOnlyList<IStatisticModel>
                       ?? new List<IStatisticModel>(models);
@@ -75,8 +87,7 @@ namespace ResearchFeatureEngine.Statistics
             // Reset published values to a clean state so the
             // engine matches a fresh build (no stale statistics
             // leaking across runs).
-            var s = Context.Values?.Statistics;
-            if (s is not null)
+            var s = Context.Values.Statistics;
             {
                 s.ObservationCount = 0;
                 s.Location.Mean = 0.0;
@@ -100,70 +111,60 @@ namespace ResearchFeatureEngine.Statistics
             //--------------------------------------------------
             // Live-bar handling
             //--------------------------------------------------
-            // The rolling window holds CLOSED bars only. When a new
-            // bar is observed (currentIndex > _lastSeenIndex), the
-            // previously-live bar (at _lastSeenIndex) just closed;
-            // commit its close to the window. Re-ticks on the same
-            // bar (currentIndex == _lastSeenIndex) only refresh
-            // _liveBarClose and do not touch the window, so the
-            // published mean / std dev stay stable across ticks.
+            // The committed rolling window holds CLOSED bars only.
+            // When a new bar is observed (currentIndex > _lastSeenIndex),
+            // the previously-live bar just closed; commit its FINAL close
+            // (the last tick value held in _liveBarClose) to the window.
+            // Re-ticks on the same bar (currentIndex == _lastSeenIndex)
+            // do not touch the committed window — they only refresh
+            // _liveBarClose below, and the live close is appended to the
+            // observations at computation time. This gives responsive,
+            // current-bar-inclusive statistics without double-counting.
 
             bool isNewBar = currentIndex > _lastSeenIndex;
 
             if (isNewBar && _lastSeenIndex >= 0)
             {
-                // Commit the previously-live bar's close to the
-                // window. This is the value we held in
+                // Commit the previously-live bar's final close to the
+                // committed window. This is the value we held in
                 // _liveBarClose; the most recent tick on that bar.
                 _window.Add(_liveBarClose);
             }
 
-            // Update the held-aside live-bar close (re-ticks
+            // Refresh the held-aside live-bar close (re-ticks
             // overwrite the previously-stored value; new bars
-            // initialize it from the current tick).
-            if (Context.MarketData is not null &&
-                currentIndex < Context.MarketData.Close.Count)
+            // initialize it from the current tick). The market
+            // data adapter is null only in null-guard tests.
+            var md = Context.MarketData;
+            if (md is not null &&
+                currentIndex < md.Close.Count)
             {
-                _liveBarClose = Context.MarketData.Close[currentIndex];
+                _liveBarClose = md.Close[currentIndex];
             }
 
             _lastSeenIndex = currentIndex;
 
-            Context.Values!.Statistics.ObservationCount = _window.Count;
+            //--------------------------------------------------
+            // Build the current observation set: committed closed
+            // bars plus the live bar's latest close.
+            //--------------------------------------------------
+            // We avoid mutating the committed window for the live bar
+            // by copying its contents and appending _liveBarClose.
+            // Allocation is bounded by the window size and happens
+            // once per bar (twice on a bar-open tick).
 
-            //--------------------------------------------------
-            // Not-enough-data guard
-            //--------------------------------------------------
-            // On the very first bar of a live stream there are no
-            // closed bars yet, so the rolling window is empty.
-            // Publishing statistics in that state is meaningless
-            // (and would require the validator to accept empty
-            // input, weakening a useful invariant). We leave the
-            // statistic values at their default and skip model
-            // execution. Once a second bar opens, the first bar's
-            // close gets committed and the window starts filling.
+            double[] closed = _window.GetOrderedArray();
 
-            if (_window.Count == 0)
-            {
-                return;
-            }
+            int liveCount = closed.Length + 1;
+            double[] observations = new double[liveCount];
+            Array.Copy(closed, observations, closed.Length);
+            observations[closed.Length] = _liveBarClose;
 
-            //--------------------------------------------------
-            // Build immutable input
-            //--------------------------------------------------
+            Context.Values.Statistics.ObservationCount = liveCount;
 
-            StatisticsInput input =
-                new StatisticsInput(_window.GetOrderedArray());
-
-            //--------------------------------------------------
-            // Validate
-            //--------------------------------------------------
+            StatisticsInput input = new StatisticsInput(observations);
 
             _validator.Validate(input, _models);
-
-            //--------------------------------------------------
-            // Execute models
-            //--------------------------------------------------
 
             ReadOnlySpan<double> span = input.Observations.Span;
 

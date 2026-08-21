@@ -1,5 +1,11 @@
 using cAlgo.API;
 
+// cTrader populates [Parameter] / [Output] properties and the
+// Initialize()-set fields after construction, so the constructor
+// legitimately leaves them null. Suppress the nullable-init warning
+// for the indicator adapter only.
+#pragma warning disable CS8618
+
 using ResearchFeatureEngine.Adapters;
 using ResearchFeatureEngine.Composition;
 using ResearchFeatureEngine.Core;
@@ -177,3 +183,5 @@ namespace ResearchFeatureEngine.Indicators
         }
     }
 }
+
+#pragma warning restore CS8618
