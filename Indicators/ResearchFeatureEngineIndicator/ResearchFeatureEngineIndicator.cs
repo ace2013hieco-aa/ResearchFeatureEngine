@@ -65,6 +65,11 @@ namespace ResearchFeatureEngine.Indicators
             DefaultValue = 252, MinValue = 2)]
         public int StatisticsWindowSize { get; set; }
 
+        // 0 = CloseToReference, 1 = TrailingStopPosition
+        [Parameter("Reversal Mode", Group = "Reversal",
+            DefaultValue = ReversalMode.CloseToReference)]
+        public ReversalMode ReversalMode { get; set; }
+
         // ---------------------------------------------------------
         // Outputs
         // ---------------------------------------------------------
@@ -89,6 +94,18 @@ namespace ResearchFeatureEngine.Indicators
 
         [Output("Std Dev (Rolling)", LineColor = "Yellow", Thickness = 1)]
         public IndicatorDataSeries StdDevSeries { get; set; }
+
+        [Output("Bars Since Reversal", LineColor = "White", Thickness = 1)]
+        public IndicatorDataSeries BarsSinceReversalSeries { get; set; }
+
+        [Output("Reversal Direction", LineColor = "Red", Thickness = 1)]
+        public IndicatorDataSeries ReversalDirectionSeries { get; set; }
+
+        // Step function: 1 on the reversal bar, 0 otherwise (gap
+        // before the first reversal). Useful for alerting.
+        [Output("Reversal Bar", LineColor = "White",
+            PlotType = PlotType.Histogram, Thickness = 2)]
+        public IndicatorDataSeries ReversalBarSeries { get; set; }
 
         // ---------------------------------------------------------
         // Engine state
@@ -127,7 +144,8 @@ namespace ResearchFeatureEngine.Indicators
 
             var options = new EngineOptions
             {
-                StatisticsWindowSize = StatisticsWindowSize
+                StatisticsWindowSize = StatisticsWindowSize,
+                ReversalMode = ReversalMode
             };
 
             var configuration = new EngineConfiguration(
@@ -178,6 +196,27 @@ namespace ResearchFeatureEngine.Indicators
             NormalizedSeries[index]    = _values.Normalization.NormalizedMeasurement;
             MeanSeries[index]          = _values.Statistics.Location.Mean;
             StdDevSeries[index]        = _values.Statistics.Dispersion.StandardDeviation;
+
+            // Reversal stage. BarsSinceReversal is null until the
+            // first reversal; plot NaN (gap) in that case.
+            // Direction is None until the first reversal; plot NaN,
+            // then +1 (Up) / -1 (Down) for the most recent reversal.
+            BarsSinceReversalSeries[index] =
+                _values.Reversal.BarsSinceReversal.HasValue
+                    ? _values.Reversal.BarsSinceReversal.Value
+                    : double.NaN;
+
+            ReversalDirectionSeries[index] =
+                _values.Reversal.Direction == Core.ReversalDirection.None
+                    ? double.NaN
+                    : (int)_values.Reversal.Direction;
+
+            // Reversal-bar signal (step function): 1 on the reversal
+            // bar, 0 otherwise. NaN (gap) until the first reversal.
+            ReversalBarSeries[index] =
+                _values.Reversal.Direction == Core.ReversalDirection.None
+                    ? double.NaN
+                    : (_values.Reversal.IsReversalBar ? 1.0 : 0.0);
 
             _lastProcessedIndex = index;
         }

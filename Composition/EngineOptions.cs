@@ -1,3 +1,5 @@
+using ResearchFeatureEngine.Core;
+
 namespace ResearchFeatureEngine.Composition
 {
     /// <summary>
@@ -14,5 +16,12 @@ namespace ResearchFeatureEngine.Composition
         /// Gets or sets the statistics window size.
         /// </summary>
         public int StatisticsWindowSize { get; set; } = 20;
+
+        /// <summary>
+        /// Gets or sets the reversal detection mode used by the
+        /// Reversal stage.
+        /// </summary>
+        public ReversalMode ReversalMode { get; set; }
+            = ReversalMode.CloseToReference;
     }
 }

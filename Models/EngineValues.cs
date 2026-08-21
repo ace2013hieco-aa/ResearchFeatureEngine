@@ -1,3 +1,4 @@
+using ResearchFeatureEngine.Reversal.Runtime;
 using ResearchFeatureEngine.Statistics.Runtime;
 
 namespace ResearchFeatureEngine.Core
@@ -14,6 +15,7 @@ namespace ResearchFeatureEngine.Core
             Scale = new ScaleRuntimeValues();
             Normalization = new NormalizationRuntimeValues();
             Statistics = new StatisticsRuntimeValues();
+            Reversal = new ReversalRuntimeValues();
         }
 
         #region Reference
@@ -60,6 +62,15 @@ namespace ResearchFeatureEngine.Core
         public StatisticsRuntimeValues Statistics { get; }
 
         #endregion
+
+        #region Reversal
+
+        /// <summary>
+        /// Gets the reversal runtime values.
+        /// </summary>
+        public ReversalRuntimeValues Reversal { get; }
+
+        #endregion
     }
 
     /// <summary>
@@ -81,6 +92,16 @@ namespace ResearchFeatureEngine.Core
         /// Gets the current direction of the market reference.
         /// </summary>
         public int Direction { get; internal set; }
+
+        /// <summary>
+        /// Gets the ATR trailing-stop position bias published by the
+        /// reference source (1 = long bias, -1 = short bias, 0 = flat).
+        /// Surfaced as a first-class published value so downstream
+        /// stages (e.g. Reversal in
+        /// <see cref="ReversalMode.TrailingStopPosition"/> mode) can
+        /// consume it without coupling to the reference source.
+        /// </summary>
+        public double TrendPosition { get; internal set; }
     }
 
     /// <summary>

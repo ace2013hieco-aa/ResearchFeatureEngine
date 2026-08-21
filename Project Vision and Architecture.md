@@ -18,6 +18,8 @@ Target environments include cTrader, historical backtesting, replay, future data
         ↓
     Distance
         ↓
+    Reversal
+        ↓
     Scale
         ↓
     Normalization
@@ -31,6 +33,8 @@ Target environments include cTrader, historical backtesting, replay, future data
 Reference defines market equilibrium.
 
 Distance measures current price relative to the reference and produces directional and absolute distance.
+
+Reversal tracks the close-to-reference relation as a deterministic state machine and publishes the bars since the most recent ATRSmooth reversal and the reversal direction (see `Reversal/Reversal.md`).
 
 Scale produces the characteristic scale used to express distance relative to market volatility/scale.
 

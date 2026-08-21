@@ -18,7 +18,9 @@ namespace ResearchFeatureEngine.Engines
     /// algorithm. The source owns its own runtime state
     /// (<see cref="Reference.Runtime.ReferenceRuntime"/>); the engine
     /// only validates the published value and writes it into the
-    /// canonical runtime values container.
+    /// canonical runtime values container, and mirrors the source's
+    /// trailing-stop position bias into
+    /// <see cref="Core.EngineValues.Reference"/> for downstream use.
     /// </summary>
     public sealed class ReferenceEngine : EngineBase
     {
@@ -58,6 +60,12 @@ namespace ResearchFeatureEngine.Engines
             ReferenceValidator.Validate(price);
 
             Context.Values.Reference.Price = price;
+
+            // Surface the source's trailing-stop position bias as a
+            // first-class published value so downstream stages can
+            // consume it without coupling to the reference source.
+            Context.Values.Reference.TrendPosition =
+                _referenceSource.Runtime.Position;
         }
 
         /// <inheritdoc />

@@ -6,6 +6,7 @@ using ResearchFeatureEngine.Engines;
 using ResearchFeatureEngine.Models;
 using ResearchFeatureEngine.Normalization;
 using ResearchFeatureEngine.Normalization.Models;
+using ResearchFeatureEngine.Reversal;
 using ResearchFeatureEngine.Scale;
 using ResearchFeatureEngine.Scale.Models;
 using ResearchFeatureEngine.Statistics;
@@ -59,6 +60,9 @@ namespace ResearchFeatureEngine.Composition
                     context,
                     new ReferenceDistanceModel(
                         _configuration.MarketData)));
+
+            builder.Add(
+                new ReversalEngine(context, _configuration.Options.ReversalMode));
 
             builder.Add(
                 new ScaleEngine(
