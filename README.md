@@ -1,0 +1,153 @@
+# ResearchFeatureEngine
+
+A platform-independent quantitative research feature engine that transforms market data into deterministic, mathematically defined research features through a composable pipeline.
+
+The core engine has **no cTrader dependencies** — cTrader lives only in the adapter/indicator layer. The same production pipeline drives cTrader, historical backtesting, replay, and research tooling.
+
+[![Release](https://img.shields.io/badge/release-v1.1-blue)](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/releases/tag/v1.1)
+[![Tests](https://img.shields.io/badge/tests-105%2F105-brightgreen)](#testing)
+
+---
+
+## Pipeline
+
+```
+Market Data
+    ↓
+Reference      ← ATR-smoothed equilibrium (ATRSmoothReferenceSource)
+    ↓
+Distance       ← close vs reference (directional + absolute)
+    ↓
+Reversal       ← close-to-reference state machine (v1.1)
+    ↓
+Scale          ← characteristic scale (ATR)
+    ↓
+Normalization ← distance / scale (dimensionless feature)
+    ↓
+Statistics    ← rolling mean / std dev / median / MAD / range
+    ↓
+EngineValues  → Consumer / cTrader
+```
+
+Each stage is an `EngineBase` with the Template-Method lifecycle (`Processing → OnUpdate → Ready`), owns its own runtime sub-object inside `EngineValues` (single ownership), validates its output before publishing, and is composable — adding a new model/source doesn't require modifying downstream engines.
+
+See [`Project Vision and Architecture.md`](Project%20Vision%20and%20Architecture.md) for the full architecture.
+
+---
+
+## What's new in v1.1
+
+### ATRSmooth reversal feature
+
+A new `ReversalEngine` pipeline stage (after Distance) tracks the close-to-ATRSmooth relation as a deterministic state machine and publishes three values into `EngineValues.Reversal`:
+
+| Output | Type | Description |
+| --- | --- | --- |
+| `BarsSinceReversal` | `int?` | Bar distance from the most recent reversal (`0` on the reversal bar, `1` on the next, …), reset to `0` on the next reversal. `null` until the first reversal. |
+| `Direction` | `ReversalDirection` | Direction of the **most recent** reversal (`Up` / `Down`), persisting until the next reversal. `None` until the first reversal. |
+| `IsReversalBar` | `bool` | Step function: `true` only on the reversal bar itself — for alerting/signal logic. `false` until the first reversal. |
+
+### Two detection modes
+
+Selectable via `EngineOptions.ReversalMode` / the cTrader **Reversal Mode** parameter:
+
+| Mode | Relation | Reversal |
+| --- | --- | --- |
+| `CloseToReference` (default) | sign of `close − reference`; `>= reference` is ABOVE, `<` is BELOW | strict side change |
+| `TrailingStopPosition` | sign of the ATR trailing-stop bias (`Reference.TrendPosition`); `> 0` (long) is ABOVE, `<= 0` (short/flat) is BELOW | strict sign change — reproduces the original `AtrTrailingStopSmoothed` `pos` flips |
+
+**Verified bar-for-bar** against an independent reimplementation of the original `AtrTrailingStopSmoothed` `pos` series on 10 000 real EURUSD M1 bars — `TrendPosition` equals `pos` and every reversal bar/direction matches.
+
+No lookahead (only current + previous bar); live re-tick idempotent via state snapshotting. See [`Reversal/Reversal.md`](Reversal/Reversal.md) for full semantics, equality behavior, and initialization.
+
+### Live-bar statistics fix
+
+The rolling mean / std dev were previously computed over **closed bars only**, which made them freeze on the live bar while every other stage included the current bar — the "distorted on live bars, smooth on history" symptom. Statistics now appends the live bar's latest close to the observations on every tick, so the mean/std respond smoothly to the live bar like the rest of the pipeline and the original reference indicator.
+
+### Nullability cleanup
+
+`EngineContext.Values` is now non-nullable; all `Context.Values!` / `MarketData!` null-forgiving operators removed. The engine and indicator build **warning-free** (the 9 `CS8602` warnings are resolved).
+
+---
+
+## cTrader indicator
+
+The indicator (`Indicators/ResearchFeatureEngineIndicator/`) is a **thin adapter** — it contains no math. It wires cTrader's bar stream to the production pipeline via `CTraderMarketData` and publishes `EngineValues` to output series.
+
+### Outputs
+
+| Output | Color | Notes |
+| --- | --- | --- |
+| Reference | DodgerBlue | ATR-smoothed equilibrium |
+| Directional Distance | Orange | `close − reference` (signed) |
+| Absolute Distance | Magenta | `|close − reference|` |
+| Scale (ATR) | Gray | characteristic scale |
+| Normalized | Lime | dimensionless feature |
+| Mean (Rolling) | Aqua | rolling mean of close |
+| Std Dev (Rolling) | Yellow | rolling std dev of close |
+| **Bars Since Reversal** | White | `0` on reversal, increments; gap before first reversal (v1.1) |
+| **Reversal Direction** | Red | `+1` Up / `-1` Down; gap before first reversal (v1.1) |
+| **Reversal Bar** | White (histogram) | `1` on the reversal bar, `0` otherwise; gap before first reversal (v1.1) |
+
+### Parameters
+
+| Parameter | Group | Default |
+| --- | --- | --- |
+| ATR Period | Reference | 16 |
+| ATR Multiplier | Reference | 5.1 |
+| VWMA Smooth Length | Reference | 100 |
+| Scale ATR Period | Scale | 14 |
+| Statistics Window | Statistics | 252 |
+| **Reversal Mode** | Reversal | `CloseToReference` (v1.1) |
+
+The indicator renders in a dedicated sub-pane (`IsOverlay = false`), so it does not obscure the price chart.
+
+---
+
+## Build & test
+
+```bash
+# Build the platform-independent engine (net6.0)
+dotnet build ResearchFeatureEngine.csproj
+
+# Build the cTrader indicator
+dotnet build Indicators/ResearchFeatureEngineIndicator/ResearchFeatureEngineIndicator.csproj
+
+# Run the full test suite (xUnit, net10.0)
+dotnet test Tests/ResearchFeatureEngine.Tests.csproj
+```
+
+Both .NET SDK 6 and 10 are supported (6 for the engine/indicator, 10 for the test project).
+
+## <a name="testing"></a>Testing
+
+- **Full suite: 105/105 passing.**
+- Mathematical correctness, determinism, long-run stability (100k bars), performance benchmarks, real-market-data validation (10k EURUSD M1 bars), and cross-platform consistency.
+- 28 reversal-specific tests: all 7 required cases, equality boundary, multiple alternating reversals, re-tick idempotency, lookahead, both modes, the step signal, and the real-data comparison against the original indicator.
+- No regressions in the existing ATRSmooth / statistics / determinism / long-run suites.
+
+---
+
+## Project layout
+
+```
+Core/                EngineContext, EngineBase, EngineValues, StatisticType,
+                     ReversalDirection, ReversalMode
+Reference/           IReferenceSource, ATRSmoothReferenceSource,
+                     ReferenceRuntime, configuration, validation
+Engines/             ReferenceEngine, DistanceEngine, validators
+Reversal/            ReversalEngine, ReversalRuntimeValues, validator, docs (v1.1)
+Scale/               ScaleEngine, ATRScaleModel
+Normalization/       NormalizationEngine, ScaleNormalizationModel
+Statistics/          StatisticsEngine, StatisticsWindow, models, publisher
+Composition/         ResearchFeatureEngine, builder, configuration, options
+Adapters/            CTraderMarketData, CTraderPriceSeries (cTrader only)
+Indicators/          ResearchFeatureEngineIndicator (cTrader only)
+ATRsmooth2/          Original AtrTrailingStopSmoothed reference indicator
+tools/               CTraderHarness (CSV runner), ComputeExpected
+Tests/               xUnit tests + test data (EURUSD_M1_10000.csv)
+```
+
+## License
+
+See the repository for license details.
