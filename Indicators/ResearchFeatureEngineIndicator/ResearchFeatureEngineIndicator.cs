@@ -173,13 +173,46 @@ namespace ResearchFeatureEngine.Indicators
         public override void Calculate(int index)
         {
             // ---------------------------------------------------------
-            // Detect a fresh pass (chart recalc / new history load /
-            // indicator re-attach) and reset the pipeline.
+            // Lifecycle contract enforcement.
+            //
+            // Supported transitions from the previously processed bar:
+            //   * index == _lastProcessedIndex       live re-tick
+            //   * index == _lastProcessedIndex + 1   next bar
+            //   * first call after Initialize()      index 0
+            //   * index == 0 after processing        fresh pass
+            //     (chart recalc / history reload / re-attach)
+            //
+            // Any other transition is a discontinuity that cTrader can
+            // produce on partial recalculation events (e.g. older-history
+            // back-fill, which prepends bars and shifts indices). Feeding
+            // such an index straight into the stateful engines would
+            // silently corrupt the rolling statistics window, the
+            // VWMA/ATR/trailing-stop state, and the reversal counters —
+            // and every subsequent bar would inherit the contamination.
+            //
+            // On a discontinuity we therefore rebuild deterministic state
+            // by replaying bars 0..index-1 through the freshly reset
+            // pipeline, which reproduces bit-for-bit what a clean load
+            // would have produced, and publish the recomputed values.
+            // Cost is O(index) once per discontinuity event; the normal
+            // streaming path (re-tick / next bar) stays O(1).
             // ---------------------------------------------------------
-            if (index == 0 && _lastProcessedIndex >= 0)
+            bool freshPass = index == 0 && _lastProcessedIndex >= 0;
+
+            bool contiguous = _lastProcessedIndex < 0
+                ? index == 0
+                : index == _lastProcessedIndex
+                  || index == _lastProcessedIndex + 1;
+
+            if (freshPass || !contiguous)
             {
                 _engine.Pipeline.Reset();
-                _lastProcessedIndex = -1;
+
+                for (int i = 0; i < index; i++)
+                {
+                    _engine.ProcessAt(i);
+                    Publish(i);
+                }
             }
 
             // ---------------------------------------------------------
@@ -194,9 +227,13 @@ namespace ResearchFeatureEngine.Indicators
             // ---------------------------------------------------------
             _engine.ProcessAt(index);
 
-            // ---------------------------------------------------------
-            // Publish to cTrader outputs.
-            // ---------------------------------------------------------
+            Publish(index);
+
+            _lastProcessedIndex = index;
+        }
+
+        private void Publish(int index)
+        {
             ReferenceSeries[index]     = _values.Reference.Price;
             DirectionalSeries[index]   = _values.Distance.DirectionalExtension;
             AbsoluteSeries[index]      = _values.Distance.AbsoluteExtension;
@@ -227,8 +264,6 @@ namespace ResearchFeatureEngine.Indicators
                 _values.Reversal.Direction == Core.ReversalDirection.None
                     ? double.NaN
                     : (_values.Reversal.IsReversalBar ? 1.0 : 0.0);
-
-            _lastProcessedIndex = index;
         }
     }
 }

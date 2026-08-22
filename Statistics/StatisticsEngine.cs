@@ -16,6 +16,13 @@ namespace ResearchFeatureEngine.Statistics
     /// measurement) by design — the distribution of the normalized
     /// feature is a distinct concern for a downstream stage.
     ///
+    /// The configured <see cref="StatisticsSource"/> selects the
+    /// quantity the statistics describe: raw closes (default) or
+    /// per-bar simple/log returns derived from adjacent closes at the
+    /// input-materialization boundary below. Statistic models always
+    /// receive plain numeric observations and never see which source
+    /// produced them.
+    ///
     /// Current-bar-inclusive semantics: the rolling window holds the
     /// last N CLOSED bars, and the live (still-forming) bar's latest
     /// close is appended to the observations on every tick so the
@@ -41,6 +48,13 @@ namespace ResearchFeatureEngine.Statistics
 
         private readonly IReadOnlyList<IStatisticModel> _models;
 
+        // Quantity materialized into observations on each update:
+        // raw closes (default) or per-bar returns derived from
+        // adjacent closes. The committed window always stores closes;
+        // returns are recomputed from it on every update and never
+        // persisted.
+        private readonly StatisticsSource _source;
+
         // Live-bar tracking. _lastSeenIndex is the highest bar index
         // processed so far; the bar at _lastSeenIndex is the current
         // live (still-forming) bar. _liveBarClose is its latest close
@@ -56,16 +70,23 @@ namespace ResearchFeatureEngine.Statistics
         /// <param name="context">Shared execution context.</param>
         /// <param name="window">Rolling statistics window.</param>
         /// <param name="models">Registered statistic models.</param>
+        /// <param name="source">
+        /// Quantity whose statistics are computed. Defaults to
+        /// <see cref="StatisticsSource.Close"/>, which preserves the
+        /// historical behavior exactly.
+        /// </param>
         public StatisticsEngine(
             EngineContext context,
             StatisticsWindow window,
-            IEnumerable<IStatisticModel> models)
+            IEnumerable<IStatisticModel> models,
+            StatisticsSource source = StatisticsSource.Close)
             : base("StatisticsEngine", context)
         {
             ArgumentNullException.ThrowIfNull(window);
             ArgumentNullException.ThrowIfNull(models);
 
             _window = window;
+            _source = source;
 
             _validator = new StatisticsValidator();
 
@@ -152,15 +173,45 @@ namespace ResearchFeatureEngine.Statistics
             // by copying its contents and appending _liveBarClose.
             // Allocation is bounded by the window size and happens
             // once per bar (twice on a bar-open tick).
+            //
+            // Source materialization: with StatisticsSource.Close the
+            // close sequence IS the observation set (historical
+            // behavior). With a return source each observation is
+            // derived from adjacent closes of that sequence — the
+            // window keeps storing closes, returns are recomputed
+            // from it on every update and never persisted.
 
             double[] closed = _window.GetOrderedArray();
 
             int liveCount = closed.Length + 1;
-            double[] observations = new double[liveCount];
-            Array.Copy(closed, observations, closed.Length);
-            observations[closed.Length] = _liveBarClose;
+            double[] observations;
 
-            Context.Values.Statistics.ObservationCount = liveCount;
+            if (_source == StatisticsSource.Close)
+            {
+                observations = new double[liveCount];
+                Array.Copy(closed, observations, closed.Length);
+                observations[closed.Length] = _liveBarClose;
+
+                Context.Values.Statistics.ObservationCount = liveCount;
+            }
+            else
+            {
+                int returnCount = liveCount - 1;
+
+                Context.Values.Statistics.ObservationCount = returnCount;
+
+                if (returnCount == 0)
+                {
+                    // First bar only: there is no previous close to
+                    // form a return against. Publish no synthetic
+                    // observation; the first valid return appears at
+                    // index 1.
+                    return;
+                }
+
+                observations =
+                    MaterializeReturns(closed, _liveBarClose, returnCount);
+            }
 
             StatisticsInput input = new StatisticsInput(observations);
 
@@ -191,6 +242,53 @@ namespace ResearchFeatureEngine.Statistics
                     model.Type,
                     value);
             }
+        }
+
+        /// <summary>
+        /// Materializes per-bar returns from the close sequence
+        /// (closed bars followed by the live bar's latest close).
+        ///
+        /// Observation i is the return between adjacent closes:
+        ///   SimpleReturn: C_{i+1} / C_i - 1
+        ///   LogReturn:    ln(C_{i+1} / C_i)
+        ///
+        /// The live bar's return therefore occupies the LAST slot and
+        /// is recomputed on every re-tick from the committed previous
+        /// close and the live bar's latest close — no future data is
+        /// read and no separate return history is kept.
+        /// </summary>
+        private double[] MaterializeReturns(
+            double[] closedCloses,
+            double liveClose,
+            int returnCount)
+        {
+            double[] observations = new double[returnCount];
+
+            bool logarithmic = _source == StatisticsSource.LogReturn;
+
+            for (int i = 0; i < returnCount; i++)
+            {
+                double previous = closedCloses[i];
+                double current = i + 1 < closedCloses.Length
+                    ? closedCloses[i + 1]
+                    : liveClose;
+
+                if (previous <= 0.0 || current <= 0.0)
+                {
+                    throw new InvalidOperationException(
+                        $"Statistics source '{_source}' requires " +
+                        $"strictly positive closes; got previous={previous}, " +
+                        $"current={current} at observation {i}.");
+                }
+
+                double ratio = current / previous;
+
+                observations[i] = logarithmic
+                    ? Math.Log(ratio)
+                    : ratio - 1.0;
+            }
+
+            return observations;
         }
     }
 }

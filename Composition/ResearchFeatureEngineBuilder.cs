@@ -79,7 +79,8 @@ namespace ResearchFeatureEngine.Composition
                     context,
                     new StatisticsWindow(
                         _configuration.Options.StatisticsWindowSize),
-                    _configuration.StatisticModels));
+                    _configuration.StatisticModels,
+                    _configuration.Options.StatisticsSource));
 
             return builder.Build();
         }

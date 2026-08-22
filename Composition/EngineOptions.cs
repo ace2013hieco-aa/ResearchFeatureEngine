@@ -18,6 +18,17 @@ namespace ResearchFeatureEngine.Composition
         public int StatisticsWindowSize { get; set; } = 20;
 
         /// <summary>
+        /// Gets or sets the quantity whose rolling statistics are
+        /// computed by the Statistics stage (raw closes, simple
+        /// returns, or log returns).
+        /// The default is <see cref="StatisticsSource.Close"/>,
+        /// which preserves the historical behavior for callers that
+        /// do not specify a source.
+        /// </summary>
+        public StatisticsSource StatisticsSource { get; set; }
+            = StatisticsSource.Close;
+
+        /// <summary>
         /// Gets or sets the reversal detection mode used by the
         /// Reversal stage.
         /// </summary>
