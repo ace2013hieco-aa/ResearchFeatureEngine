@@ -95,6 +95,12 @@ namespace ResearchFeatureEngine.Indicators
         [Output("Std Dev (Rolling)", LineColor = "Yellow", Thickness = 1)]
         public IndicatorDataSeries StdDevSeries { get; set; }
 
+        [Output("Skewness (Rolling)", LineColor = "Pink", Thickness = 1)]
+        public IndicatorDataSeries SkewnessSeries { get; set; }
+
+        [Output("Kurtosis (Rolling)", LineColor = "Cyan", Thickness = 1)]
+        public IndicatorDataSeries KurtosisSeries { get; set; }
+
         [Output("Bars Since Reversal", LineColor = "White", Thickness = 1)]
         public IndicatorDataSeries BarsSinceReversalSeries { get; set; }
 
@@ -139,7 +145,9 @@ namespace ResearchFeatureEngine.Indicators
                 new MedianModel(),
                 new VarianceModel(),
                 new MedianAbsoluteDeviationModel(),
-                new Statistics.Models.RangeModel()
+                new Statistics.Models.RangeModel(),
+                new SkewnessModel(),
+                new KurtosisModel()
             };
 
             var options = new EngineOptions
@@ -196,6 +204,8 @@ namespace ResearchFeatureEngine.Indicators
             NormalizedSeries[index]    = _values.Normalization.NormalizedMeasurement;
             MeanSeries[index]          = _values.Statistics.Location.Mean;
             StdDevSeries[index]        = _values.Statistics.Dispersion.StandardDeviation;
+            SkewnessSeries[index]      = _values.Statistics.Shape.Skewness;
+            KurtosisSeries[index]      = _values.Statistics.Shape.Kurtosis;
 
             // Reversal stage. BarsSinceReversal is null until the
             // first reversal; plot NaN (gap) in that case.

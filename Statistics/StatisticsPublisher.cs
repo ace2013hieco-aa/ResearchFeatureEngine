@@ -83,6 +83,18 @@ namespace ResearchFeatureEngine.Statistics
                     _runtime.Range.Range = value;
                     break;
 
+                //------------------------------------------
+                // Shape
+                //------------------------------------------
+
+                case StatisticType.Skewness:
+                    _runtime.Shape.Skewness = value;
+                    break;
+
+                case StatisticType.Kurtosis:
+                    _runtime.Shape.Kurtosis = value;
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(
                         nameof(type),

@@ -175,6 +175,18 @@ namespace ResearchFeatureEngine.Statistics
 
                 double value = model.Compute(input);
 
+                // A model returns NaN when its mathematical validity
+                // condition is not met but the failure is benign and
+                // expected (e.g. a zero-variance window makes
+                // skewness/kurtosis undefined). Follow the established
+                // skip-publication semantics: the publisher is not
+                // invoked, so the runtime retains its last published
+                // value — exactly as when the observation count is
+                // below the model's minimum. Nothing is published
+                // (no 0, no NaN) and nothing is thrown.
+                if (double.IsNaN(value))
+                    continue;
+
                 _publisher.Publish(
                     model.Type,
                     value);

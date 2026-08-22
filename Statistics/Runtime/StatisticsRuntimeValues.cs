@@ -78,8 +78,16 @@ namespace ResearchFeatureEngine.Statistics.Runtime
     /// </summary>
     public sealed class StatisticsShapeRuntimeValues
     {
+        /// <summary>
+        /// Gets the Fisher–Pearson bias-corrected sample skewness
+        /// (G1) of the current observation window.
+        /// </summary>
         public double Skewness { get; internal set; }
 
+        /// <summary>
+        /// Gets the Fisher bias-corrected excess kurtosis (G2) of
+        /// the current observation window.
+        /// </summary>
         public double Kurtosis { get; internal set; }
     }
 }

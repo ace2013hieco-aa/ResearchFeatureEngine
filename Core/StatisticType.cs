@@ -44,6 +44,16 @@ namespace ResearchFeatureEngine.Core
         /// <summary>
         /// The difference between the maximum and minimum values.
         /// </summary>
-        Range
+        Range,
+
+        /// <summary>
+        /// The Fisher–Pearson bias-corrected sample skewness (G1).
+        /// </summary>
+        Skewness,
+
+        /// <summary>
+        /// The Fisher bias-corrected excess kurtosis (G2).
+        /// </summary>
+        Kurtosis
     }
 }

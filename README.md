@@ -5,7 +5,7 @@ A platform-independent quantitative research feature engine that transforms mark
 The core engine has **no cTrader dependencies** — cTrader lives only in the adapter/indicator layer. The same production pipeline drives cTrader, historical backtesting, replay, and research tooling.
 
 [![Release](https://img.shields.io/badge/release-v1.1-blue)](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/releases/tag/v1.1)
-[![Tests](https://img.shields.io/badge/tests-105%2F105-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-214%2F214-brightgreen)](#testing)
 
 ---
 
@@ -23,8 +23,8 @@ Reversal       ← close-to-reference state machine (v1.1)
 Scale          ← characteristic scale (ATR)
     ↓
 Normalization ← distance / scale (dimensionless feature)
-    ↓
-Statistics    ← rolling mean / std dev / median / MAD / range
+    ↓    Statistics    ← rolling mean / std dev / median / MAD / range /
+                   skewness / kurtosis
     ↓
 EngineValues  → Consumer / cTrader
 ```
@@ -60,6 +60,10 @@ Selectable via `EngineOptions.ReversalMode` / the cTrader **Reversal Mode** para
 
 No lookahead (only current + previous bar); live re-tick idempotent via state snapshotting. See [`Reversal/Reversal.md`](Reversal/Reversal.md) for full semantics, equality behavior, and initialization.
 
+### Distribution shape statistics
+
+The Statistics stage now also publishes Fisher–Pearson bias-corrected skewness (G1, n ≥ 3) and Fisher bias-corrected **excess** kurtosis (G2, n ≥ 4), computed with a numerically stable two-pass central-moment pass over the same observations as the other statistics (source-blind models; `LogReturn` is the canonical research interpretation). Flat (zero-variance) windows publish nothing — the last published value is retained. See [`Statistics/StatisticsShape.md`](Statistics/StatisticsShape.md) for formulas, zero-variance semantics, and reliability guidance.
+
 ### Live-bar statistics fix
 
 The rolling mean / std dev were previously computed over **closed bars only**, which made them freeze on the live bar while every other stage included the current bar — the "distorted on live bars, smooth on history" symptom. Statistics now appends the live bar's latest close to the observations on every tick, so the mean/std respond smoothly to the live bar like the rest of the pipeline and the original reference indicator.
@@ -85,6 +89,8 @@ The indicator (`Indicators/ResearchFeatureEngineIndicator/`) is a **thin adapter
 | Normalized | Lime | dimensionless feature |
 | Mean (Rolling) | Aqua | rolling mean of close |
 | Std Dev (Rolling) | Yellow | rolling std dev of close |
+| Skewness (Rolling) | Pink | Fisher–Pearson G1; retained value on flat windows |
+| Kurtosis (Rolling) | Cyan | Fisher G2 **excess**; retained value on flat windows |
 | **Bars Since Reversal** | White | `0` on reversal, increments; gap before first reversal (v1.1) |
 | **Reversal Direction** | Red | `+1` Up / `-1` Down; gap before first reversal (v1.1) |
 | **Reversal Bar** | White (histogram) | `1` on the reversal bar, `0` otherwise; gap before first reversal (v1.1) |
@@ -121,9 +127,10 @@ Both .NET SDK 6 and 10 are supported (6 for the engine/indicator, 10 for the tes
 
 ## <a name="testing"></a>Testing
 
-- **Full suite: 105/105 passing.**
+- **Full suite: 214/214 passing.**
 - Mathematical correctness, determinism, long-run stability (100k bars), performance benchmarks, real-market-data validation (10k EURUSD M1 bars), and cross-platform consistency.
 - 28 reversal-specific tests: all 7 required cases, equality boundary, multiple alternating reversals, re-tick idempotency, lookahead, both modes, the step signal, and the real-data comparison against the original indicator.
+- 32 skewness/kurtosis tests: independent golden references (Python two-pass computation), symmetric/asymmetric/heavy-tailed samples, the excess-kurtosis convention, minimum-n and zero-variance publication semantics, numerical stability at a 1e6 baseline, outlier sensitivity, all three sources, live-tick, fresh-pass, discontinuity recovery, and bit-for-bit determinism.
 - No regressions in the existing ATRSmooth / statistics / determinism / long-run suites.
 
 ---
