@@ -18,7 +18,7 @@ Reference      ← ATR-smoothed equilibrium (ATRSmoothReferenceSource)
     ↓
 Distance       ← close vs reference (directional + absolute)
     ↓
-Reversal       ← close-to-reference state machine (v1.1)
+Reversal       ← ATR Smooth regime-flip state machine (v1.1)
     ↓
 Scale          ← characteristic scale (ATR)
     ↓
@@ -53,8 +53,8 @@ Selectable via `EngineOptions.ReversalMode` / the cTrader **Reversal Mode** para
 
 | Mode | Relation | Reversal |
 | --- | --- | --- |
-| `CloseToReference` (default) | sign of `close − reference`; `>= reference` is ABOVE, `<` is BELOW | strict side change |
-| `TrailingStopPosition` | sign of the ATR trailing-stop bias (`Reference.TrendPosition`); `> 0` (long) is ABOVE, `<= 0` (short/flat) is BELOW | strict sign change — reproduces the original `AtrTrailingStopSmoothed` `pos` flips |
+| `TrailingStopPosition` (default) | sign of the ATR trailing-stop bias (`Reference.TrendPosition`); `> 0` (long) is ABOVE, `<= 0` (short/flat) is BELOW | strict sign change — reproduces the original `AtrTrailingStopSmoothed` `pos` flips. **Canonical semantic: a reversal is an ATR Smooth REGIME FLIP, not a candle crossing the line.** |
+| `CloseToReference` (explicit opt-in) | sign of `close − reference`; `>= reference` is ABOVE, `<` is BELOW | strict side change |
 
 **Verified bar-for-bar** against an independent reimplementation of the original `AtrTrailingStopSmoothed` `pos` series on 10 000 real EURUSD M1 bars — `TrendPosition` equals `pos` and every reversal bar/direction matches.
 
@@ -104,7 +104,7 @@ The indicator (`Indicators/ResearchFeatureEngineIndicator/`) is a **thin adapter
 | VWMA Smooth Length | Reference | 100 |
 | Scale ATR Period | Scale | 14 |
 | Statistics Window | Statistics | 252 |
-| **Reversal Mode** | Reversal | `CloseToReference` (v1.1) |
+| **Reversal Mode** | Reversal | `TrailingStopPosition` (v1.1; regime-flip semantic) |
 
 The indicator renders in a dedicated sub-pane (`IsOverlay = false`), so it does not obscure the price chart.
 

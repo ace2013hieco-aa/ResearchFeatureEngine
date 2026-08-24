@@ -10,8 +10,10 @@ namespace ResearchFeatureEngine.Core
         /// <summary>
         /// Reversal on a strict side change of the close-to-reference
         /// relation (close &gt;= reference is ABOVE, &lt; is BELOW).
-        /// This is the default and matches the close-to-close fallback
-        /// semantics.
+        /// Explicit opt-in: this treats a candle crossing the ATR
+        /// Smooth line as a reversal, which is NOT the canonical
+        /// reversal semantic (see
+        /// <see cref="TrailingStopPosition"/>).
         /// </summary>
         CloseToReference = 0,
 
@@ -20,6 +22,9 @@ namespace ResearchFeatureEngine.Core
         /// position bias (<see cref="ReferenceRuntimeValues.TrendPosition"/>):
         /// positive (long bias) → negative (short bias) is Down,
         /// negative → positive is Up. Flat (0) is treated as BELOW.
+        /// This is the DEFAULT and the canonical reversal semantic:
+        /// a reversal occurs only when the ATR Smooth regime itself
+        /// flips, never on a mere candle crossing of the line.
         /// </summary>
         TrailingStopPosition = 1
     }

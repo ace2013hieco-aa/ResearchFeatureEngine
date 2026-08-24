@@ -47,16 +47,25 @@ namespace ResearchFeatureEngine.Tests.Reversal
         }
 
         [Fact]
-        public void Pipeline_ReversalMatchesDistanceSignTransitions()
+        public void Pipeline_ReversalMatchesAtrSmoothRegimeFlips()
         {
+            // CANONICAL SEMANTIC (replaces the stale
+            // "Pipeline_ReversalMatchesDistanceSignTransitions" test,
+            // which encoded the incorrect interpretation of a
+            // reversal as a candle crossing the ATR Smooth line).
+            //
             // Drive the pipeline with the known dataset and, at each
-            // bar, recompute the expected above/below relation from
-            // the published Reference and Close. A reversal in the
-            // engine output must correspond to a strict sign change
-            // of (close - reference) between consecutive bars, using
-            // the >= rule for ABOVE. This verifies the engine's
-            // reversal detection against an independent in-test
-            // computation (no lookahead: only current + previous).
+            // bar, recompute the expected regime from the published
+            // Reference.TrendPosition (the ATR trailing-stop position
+            // bias — the canonical ATR Smooth regime state). A
+            // reversal in the engine output must correspond to a
+            // strict sign change of the regime between consecutive
+            // bars (> 0 is ABOVE, <= 0 is BELOW), and a mere
+            // close-vs-reference cross without a regime change must
+            // NOT produce a reversal. This verifies the engine's
+            // default reversal detection against an independent
+            // in-test computation (no lookahead: only current +
+            // previous).
             EngineConfiguration configuration =
                 TestConfigurationFactory.CreateKnownDataset();
 
@@ -68,6 +77,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
 
             bool hasPrev = false;
             bool prevAbove = false;
+            bool prevPriceAbove = false;
             int? expectedBars = null;
 
             int idx = 0;
@@ -75,9 +85,8 @@ namespace ResearchFeatureEngine.Tests.Reversal
             {
                 engine.Update();
 
-                double close = configuration.MarketData.Close[idx];
-                double reference = engine.Values.Reference.Price;
-                bool above = close >= reference;
+                double position = engine.Values.Reference.TrendPosition;
+                bool above = position > 0.0;
 
                 if (hasPrev && above != prevAbove)
                 {
@@ -91,6 +100,18 @@ namespace ResearchFeatureEngine.Tests.Reversal
                 Assert.Equal(expectedBars,
                     engine.Values.Reversal.BarsSinceReversal);
 
+                // Adversarial core: a close-vs-reference cross that
+                // is NOT a regime flip must never flag a reversal.
+                double close = configuration.MarketData.Close[idx];
+                double reference = engine.Values.Reference.Price;
+                bool priceAbove = close >= reference;
+                if (hasPrev && priceAbove != prevPriceAbove
+                    && above == prevAbove)
+                {
+                    Assert.False(engine.Values.Reversal.IsReversalBar);
+                }
+
+                prevPriceAbove = priceAbove;
                 prevAbove = above;
                 hasPrev = true;
                 idx++;

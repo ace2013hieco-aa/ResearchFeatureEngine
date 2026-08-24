@@ -2,27 +2,32 @@
 
 ## Definition
 
-A **reversal** is a transition in the close-to-ATRSmooth-reference
-relation between consecutive bars. The relation is the sign of the
-Distance stage's `DirectionalExtension` (= `close − reference`):
+A **reversal** is a transition of the **ATR Smooth regime itself**
+between consecutive bars — a FLIP EVENT, not a line crossing.
 
-| Relation | Condition |
+The canonical ATR Smooth regime state is the trailing-stop position
+bias published as `Reference.TrendPosition` (1 = bullish/long bias,
+-1 = bearish/short bias, 0 = flat), computed by
+`ATRSmoothReferenceSource` and verified bar-for-bar against the
+original `AtrTrailingStopSmoothed` `pos` series on 10 000 real
+EURUSD M1 bars.
+
+| Regime | Condition |
 | --- | --- |
-| ABOVE | `close >= reference` (`DirectionalExtension >= 0`) |
-| BELOW | `close < reference` (`DirectionalExtension < 0`) |
+| Bullish (ABOVE) | `TrendPosition > 0` (long bias) |
+| Bearish (BELOW) | `TrendPosition <= 0` (short/flat bias) |
 
-A reversal is a **strict side change**:
+A reversal is a **strict regime change**:
 
 | Reversal | Direction |
 | --- | --- |
-| ABOVE → BELOW | `Down` (bearish) |
-| BELOW → ABOVE | `Up` (bullish) |
+| Bullish → Bearish | `Down` (bearish) |
+| Bearish → Bullish | `Up` (bullish) |
 
-This is a **close-to-close (close-to-reference)** transition. No
-intrabar high/low penetration is used, consistent with the existing
-ATRSmooth implementation. Only the current and the previous bar are
-consulted — no future bar is read (no lookahead), so historical replay
-and live/incremental processing produce identical results.
+**A candle crossing the ATR Smooth line while the regime stays
+unchanged is NOT a reversal.** Only the current and the previous bar
+are consulted — no future bar is read (no lookahead), so historical
+replay and live/incremental processing produce identical results.
 
 ## Outputs
 
@@ -65,13 +70,15 @@ Selectable via the cTrader **Reversal Mode** parameter and
 
 | Mode | Relation | Reversal |
 | --- | --- | --- |
-| `CloseToReference` (default) | sign of `close − reference` (`DirectionalExtension`); `>= reference` is ABOVE, `<` is BELOW | strict side change |
-| `TrailingStopPosition` | sign of the ATR trailing-stop position bias (`Reference.TrendPosition`); `> 0` (long bias) is ABOVE, `<= 0` (short/flat) is BELOW | strict sign change (a flip in the trailing stop's own bias) |
+| `TrailingStopPosition` (default) | sign of the ATR trailing-stop position bias (`Reference.TrendPosition`); `> 0` (long bias) is ABOVE, `<= 0` (short/flat) is BELOW | strict sign change (a flip in the trailing stop's own bias) — the canonical reversal semantic |
+| `CloseToReference` (explicit opt-in) | sign of `close − reference` (`DirectionalExtension`); `>= reference` is ABOVE, `<` is BELOW | strict side change — treats a candle crossing the line as a reversal |
 
 `TrailingStopPosition` mode reproduces the original
 `AtrTrailingStopSmoothed` indicator's `pos` flips; verified
 bar-for-bar against an independent reimplementation on 10 000 real
-EURUSD M1 bars.
+EURUSD M1 bars. It is the DEFAULT because the research specification
+defines a reversal as an ATR Smooth REGIME FLIP, not as a candle
+crossing the ATR Smooth line.
 
 ## Equality behavior
 

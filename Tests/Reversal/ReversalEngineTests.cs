@@ -8,7 +8,15 @@ namespace ResearchFeatureEngine.Tests.Reversal
 {
     /// <summary>
     /// Comprehensive deterministic tests for the ATRSmooth reversal
-    /// state machine (<see cref="ReversalEngine"/>).
+    /// state machine (<see cref="ReversalEngine"/>) in
+    /// <see cref="ReversalMode.CloseToReference"/> mode.
+    ///
+    /// NOTE: these tests pin the mode explicitly. The engine's
+    /// DEFAULT mode is <see cref="ReversalMode.TrailingStopPosition"/>
+    /// (the canonical regime-flip semantic — see
+    /// ReversalRegimeFlipSemanticTests); this class exercises the
+    /// close-to-reference relation state machine, which remains
+    /// available as an explicit opt-in.
     ///
     /// The engine consumes the Distance stage's
     /// <see cref="DistanceRuntimeValues.DirectionalExtension"/>
@@ -27,14 +35,14 @@ namespace ResearchFeatureEngine.Tests.Reversal
             Create()
         {
             var values = new EngineValues();
-            // The ReversalEngine reads only
+            // The ReversalEngine in CloseToReference mode reads only
             // Values.Distance.DirectionalExtension (published by
             // the Distance stage), never MarketData directly. A
             // single-bar TestMarketData satisfies the non-null
             // requirement of EngineContext.
             var marketData = new TestMarketData(0.0);
             var context = new EngineContext(marketData, values);
-            var engine = new ReversalEngine(context);
+            var engine = new ReversalEngine(context, ReversalMode.CloseToReference);
             engine.Initialize();
             return (engine, context, values);
         }

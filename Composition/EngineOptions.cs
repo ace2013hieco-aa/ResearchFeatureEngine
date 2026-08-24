@@ -31,8 +31,16 @@ namespace ResearchFeatureEngine.Composition
         /// <summary>
         /// Gets or sets the reversal detection mode used by the
         /// Reversal stage.
+        ///
+        /// The default is
+        /// <see cref="ReversalMode.TrailingStopPosition"/>: a reversal
+        /// is a FLIP of the ATR Smooth regime itself (the trailing-stop
+        /// position bias), NOT a candle crossing the ATR Smooth line.
+        /// <see cref="ReversalMode.CloseToReference"/> remains
+        /// available as an explicit opt-in for the close-to-reference
+        /// relation.
         /// </summary>
         public ReversalMode ReversalMode { get; set; }
-            = ReversalMode.CloseToReference;
+            = ReversalMode.TrailingStopPosition;
     }
 }

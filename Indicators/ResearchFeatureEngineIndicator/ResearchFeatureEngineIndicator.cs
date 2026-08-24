@@ -67,7 +67,7 @@ namespace ResearchFeatureEngine.Indicators
 
         // 0 = CloseToReference, 1 = TrailingStopPosition
         [Parameter("Reversal Mode", Group = "Reversal",
-            DefaultValue = ReversalMode.CloseToReference)]
+            DefaultValue = ReversalMode.TrailingStopPosition)]
         public ReversalMode ReversalMode { get; set; }
 
         // ---------------------------------------------------------

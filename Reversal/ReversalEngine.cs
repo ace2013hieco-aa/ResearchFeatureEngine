@@ -38,19 +38,23 @@ namespace ResearchFeatureEngine.Reversal
     /// </para>
     /// <list type="bullet">
     /// <item><description>
-    /// <see cref="ReversalMode.CloseToReference"/> (default): the
-    /// relation is the sign of
-    /// <see cref="Core.DistanceRuntimeValues.DirectionalExtension"/>
-    /// (= close − reference). <c>close &gt;= reference</c> is ABOVE,
-    /// <c>&lt;</c> is BELOW. A strict side change is a reversal.
-    /// </description></item>
-    /// <item><description>
-    /// <see cref="ReversalMode.TrailingStopPosition"/>: the relation
-    /// is the sign of the ATR trailing-stop position bias
+    /// <see cref="ReversalMode.TrailingStopPosition"/> (default): the
+    /// relation is the sign of the ATR trailing-stop position bias
     /// (<see cref="Core.ReferenceRuntimeValues.TrendPosition"/>).
     /// <c>position &gt; 0</c> (long bias) is ABOVE, <c>&lt;= 0</c> is
     /// BELOW. A strict side change is a reversal — i.e. a flip in
-    /// the trailing stop's own bias.
+    /// the trailing stop's own bias. This is the canonical reversal
+    /// semantic: a reversal occurs ONLY when ATR Smooth flips regime
+    /// (bullish → bearish or bearish → bullish). A candle crossing
+    /// the ATR Smooth line while the regime stays unchanged is NOT a
+    /// reversal.
+    /// </description></item>
+    /// <item><description>
+    /// <see cref="ReversalMode.CloseToReference"/> (explicit opt-in):
+    /// the relation is the sign of
+    /// <see cref="Core.DistanceRuntimeValues.DirectionalExtension"/>
+    /// (= close − reference). <c>close &gt;= reference</c> is ABOVE,
+    /// <c>&lt;</c> is BELOW. A strict side change is a reversal.
     /// </description></item>
     /// </list>
     /// <para>
@@ -92,11 +96,14 @@ namespace ResearchFeatureEngine.Reversal
         /// <summary>
         /// Initializes a new instance of the
         /// <see cref="ReversalEngine"/> class using the
-        /// <see cref="ReversalMode.CloseToReference"/> mode.
+        /// <see cref="ReversalMode.TrailingStopPosition"/> mode —
+        /// the canonical reversal semantic: a reversal is a flip of
+        /// the ATR Smooth regime (trailing-stop position bias), not a
+        /// candle crossing the ATR Smooth line.
         /// </summary>
         /// <param name="context">Shared engine context.</param>
         public ReversalEngine(EngineContext context)
-            : this(context, ReversalMode.CloseToReference)
+            : this(context, ReversalMode.TrailingStopPosition)
         {
         }
 
