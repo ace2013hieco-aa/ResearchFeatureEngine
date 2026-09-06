@@ -38,7 +38,8 @@ namespace ResearchFeatureEngine.Tests.Integration
             IReferenceSource source = ReferenceSourceFactory.Create(
                 ReferenceType.DarvasBox,
                 atrSmoothConfiguration: null,
-                darvasBoxConfiguration: new DarvasBoxConfiguration(5));
+                darvasBoxConfiguration: new DarvasBoxConfiguration(5),
+                hmaConfiguration: null);
 
             var options = new EngineOptions
             {
@@ -136,7 +137,8 @@ namespace ResearchFeatureEngine.Tests.Integration
             IReferenceSource atrSource = ReferenceSourceFactory.Create(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(atrPeriod: 14, atrMultiplier: 5.1, smoothLength: 20),
-                darvasBoxConfiguration: null);
+                darvasBoxConfiguration: null,
+                hmaConfiguration: null);
 
             var configuration = new EngineConfiguration(
                 md,
@@ -158,11 +160,210 @@ namespace ResearchFeatureEngine.Tests.Integration
             }
         }
 
-        
+        [Fact]
+        public void HmaAtrSmoothCompositeMode_FullPipeline_ExercisesAllStages()
+        {
+            // Full production builder in composite mode: Reference →
+            // Distance → (no Darvas stages) → MeanHmaAtrSmoothDistance →
+            // HmaPriceAtrSmoothAlignment → Reversal → Scale →
+            // Normalization → Statistics all run; the dual-reference
+            // features produce real values after HMA warm-up and the
+            // existing stages keep working.
+            int n = 150;
+            double[] close = new double[n];
+            var rng = new Random(77);
+            for (int i = 0; i < n; i++)
+                close[i] = 100.0 + Math.Sin(i * 0.21) * 6.0 + rng.NextDouble() * 0.5;
 
-        
+            double[] open = new double[n];
+            double[] high = new double[n];
+            double[] low = new double[n];
+            double[] volume = new double[n];
+            for (int i = 0; i < n; i++)
+            {
+                open[i] = close[i];
+                high[i] = close[i] + 0.4;
+                low[i] = close[i] - 0.4;
+                volume[i] = 100.0;
+            }
 
-        
+            var md = new FlatOhlcvMarketData(open, high, low, close, volume);
+
+            IReferenceSource source = ReferenceSourceFactory.Create(
+                ReferenceType.HmaAtrSmooth,
+                new ATRSmoothConfiguration(16, 5.1, 100),
+                darvasBoxConfiguration: null,
+                hmaConfiguration: new HmaConfiguration(16));
+
+            var configuration = new EngineConfiguration(
+                md,
+                new EngineValues(),
+                source,
+                new ATRScaleModel(14),
+                new ScaleNormalizationModel(),
+                new System.Collections.Generic.List<IStatisticModel> { new MeanModel() },
+                new EngineOptions
+                {
+                    StatisticsWindowSize = 20,
+                    MeanHmaAtrSmoothWindowSize = 5
+                });
+
+            var engine = new ResearchFeatureEngineBuilder(configuration).Build();
+
+            for (int i = 0; i < n; i++)
+            {
+                engine.ProcessAt(i);
+            }
+
+            var v = engine.Values;
+
+            // Existing stages all healthy.
+            Assert.False(double.IsNaN(v.Reference.Price));
+            Assert.False(double.IsNaN(v.Distance.DirectionalExtension));
+            Assert.False(double.IsNaN(v.Scale.Scale));
+            Assert.False(double.IsNaN(v.Normalization.NormalizedMeasurement));
+            Assert.False(double.IsNaN(v.Statistics.Location.Mean));
+
+            // Darvas-only stages remain absent (NaN / false).
+            Assert.False(v.DarvasBoxDistance.HasBox);
+            Assert.True(double.IsNaN(v.DarvasBoxDistance.SignedClosingDistance));
+            Assert.True(double.IsNaN(v.MeanDarvasClosingDistance.MeanSignedDistance));
+
+            // Dual-reference features are live.
+            Assert.False(double.IsNaN(v.MeanHmaAtrSmoothDistance.MeanSignedDistance));
+            Assert.NotEqual(HmaPriceAtrSmoothAlignment.Unavailable,
+                v.HmaPriceAtrSmoothAlignment.Alignment);
+        }
+
+        [Fact]
+        public void HmaAtrSmoothCompositeMode_FreshVsResetEngines_ProduceIdenticalOutputs()
+        {
+            int n = 120;
+            double[] close = new double[n];
+            for (int i = 0; i < n; i++)
+                close[i] = 100.0 + Math.Sin(i * 0.3) * 5.0;
+
+            double[] open = new double[n];
+            double[] high = new double[n];
+            double[] low = new double[n];
+            double[] volume = new double[n];
+            for (int i = 0; i < n; i++)
+            {
+                open[i] = close[i];
+                high[i] = close[i] + 0.4;
+                low[i] = close[i] - 0.4;
+                volume[i] = 100.0;
+            }
+
+            ResearchFeatureEngine Build()
+            {
+                var md = new FlatOhlcvMarketData(open, high, low, close, volume);
+                IReferenceSource source = ReferenceSourceFactory.Create(
+                    ReferenceType.HmaAtrSmooth,
+                    new ATRSmoothConfiguration(16, 5.1, 100),
+                    darvasBoxConfiguration: null,
+                    hmaConfiguration: new HmaConfiguration(16));
+
+                var configuration = new EngineConfiguration(
+                    md,
+                    new EngineValues(),
+                    source,
+                    new ATRScaleModel(14),
+                    new ScaleNormalizationModel(),
+                    new System.Collections.Generic.List<IStatisticModel> { new MeanModel() },
+                    new EngineOptions
+                    {
+                        StatisticsWindowSize = 20,
+                        MeanHmaAtrSmoothWindowSize = 5
+                    });
+
+                return new ResearchFeatureEngineBuilder(configuration).Build();
+            }
+
+            var engine1 = Build();
+            var means1 = new double[n];
+            var alignments1 = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                engine1.ProcessAt(i);
+                means1[i] = engine1.Values.MeanHmaAtrSmoothDistance.MeanSignedDistance;
+                alignments1[i] = (int)engine1.Values.HmaPriceAtrSmoothAlignment.Alignment;
+            }
+
+            // Second engine: run halfway, RESET, replay everything.
+            var engine2 = Build();
+            for (int i = 0; i < 60; i++)
+                engine2.ProcessAt(i);
+            engine2.Pipeline.Reset();
+            for (int i = 0; i < n; i++)
+            {
+                engine2.ProcessAt(i);
+                Assert.Equal(means1[i],
+                    engine2.Values.MeanHmaAtrSmoothDistance.MeanSignedDistance, 12);
+                Assert.Equal(alignments1[i],
+                    (int)engine2.Values.HmaPriceAtrSmoothAlignment.Alignment);
+            }
+
+            // Third engine: fully fresh — sequential runs do not leak.
+            var engine3 = Build();
+            for (int i = 0; i < n; i++)
+                engine3.ProcessAt(i);
+            Assert.Equal(means1[n - 1],
+                engine3.Values.MeanHmaAtrSmoothDistance.MeanSignedDistance, 12);
+            Assert.Equal(alignments1[n - 1],
+                (int)engine3.Values.HmaPriceAtrSmoothAlignment.Alignment);
+        }
+
+        [Fact]
+        public void HmaConfig_AlignmentFeatureInactive_OutputsUnavailable()
+        {
+            int n = 40;
+            double[] close = new double[n];
+            double[] high = new double[n];
+            double[] low = new double[n];
+            double[] open = new double[n];
+            double[] volume = new double[n];
+            var rng = new Random(9);
+            for (int i = 0; i < n; i++)
+            {
+                close[i] = 100.0 + rng.NextDouble() * 10.0;
+                high[i] = close[i] + 0.5;
+                low[i] = close[i] - 0.5;
+                open[i] = close[i];
+                volume[i] = 100.0;
+            }
+
+            var md = new FlatOhlcvMarketData(open, high, low, close, volume);
+
+            IReferenceSource hmaSource = ReferenceSourceFactory.Create(
+                ReferenceType.Hma,
+                atrSmoothConfiguration: null,
+                darvasBoxConfiguration: null,
+                hmaConfiguration: new HmaConfiguration(16));
+
+            var configuration = new EngineConfiguration(
+                md,
+                new EngineValues(),
+                hmaSource,
+                new ATRScaleModel(14),
+                new ScaleNormalizationModel(),
+                new System.Collections.Generic.List<IStatisticModel> { new MeanModel() },
+                new EngineOptions { StatisticsWindowSize = 20 });
+
+            var engine = new ResearchFeatureEngineBuilder(configuration).Build();
+
+            for (int i = 0; i < n; i++)
+            {
+                engine.ProcessAt(i);
+
+                // HMA/Price vs ATRSmooth Alignment should be Unavailable (ATRSmooth not present)
+                Assert.Equal(HmaPriceAtrSmoothAlignment.Unavailable,
+                    engine.Values.HmaPriceAtrSmoothAlignment.Alignment);
+
+                // MeanHmaAtrSmoothDistance should be NaN
+                Assert.True(double.IsNaN(engine.Values.MeanHmaAtrSmoothDistance.MeanSignedDistance));
+            }
+        }
 
         [Fact]
         public void EngineReset_ProducesIdenticalResultsToFreshEngine()

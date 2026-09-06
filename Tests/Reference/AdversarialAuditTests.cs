@@ -585,7 +585,7 @@ namespace ResearchFeatureEngine.Tests.Reference
                 System.Reflection.BindingFlags.Public |
                 System.Reflection.BindingFlags.NonPublic |
                 System.Reflection.BindingFlags.Instance);
-            Assert.Equal(8, fields.Length);
+            Assert.Equal(9, fields.Length);
         }
 
         // ---------------------------------------------------------

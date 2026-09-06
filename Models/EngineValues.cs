@@ -15,6 +15,8 @@ namespace ResearchFeatureEngine.Core
             Distance = new DistanceRuntimeValues();
             DarvasBoxDistance = new DarvasBoxDistanceRuntimeValues();
             MeanDarvasClosingDistance = new MeanDarvasClosingDistanceRuntimeValues();
+            MeanHmaAtrSmoothDistance = new MeanHmaAtrSmoothDistanceRuntimeValues();
+            HmaPriceAtrSmoothAlignment = new HmaPriceAtrSmoothAlignmentRuntimeValues();
             Scale = new ScaleRuntimeValues();
             Normalization = new NormalizationRuntimeValues();
             Statistics = new StatisticsRuntimeValues();
@@ -57,6 +59,26 @@ namespace ResearchFeatureEngine.Core
         /// (rolling mean of signed Darvas closing distances).
         /// </summary>
         public MeanDarvasClosingDistanceRuntimeValues MeanDarvasClosingDistance { get; }
+
+        #endregion
+
+        #region Mean HMA–ATRSmooth Distance
+
+        /// <summary>
+        /// Gets the mean HMA–ATRSmooth distance runtime values
+        /// (rolling mean of signed HMA minus ATRSmooth distances).
+        /// </summary>
+        public MeanHmaAtrSmoothDistanceRuntimeValues MeanHmaAtrSmoothDistance { get; }
+
+        #endregion
+
+        #region HMA/Price vs ATRSmooth Alignment
+
+        /// <summary>
+        /// Gets the HMA/Price vs ATRSmooth alignment runtime values
+        /// (current-bar alignment state).
+        /// </summary>
+        public HmaPriceAtrSmoothAlignmentRuntimeValues HmaPriceAtrSmoothAlignment { get; }
 
         #endregion
 

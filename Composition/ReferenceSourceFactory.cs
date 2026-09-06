@@ -24,6 +24,15 @@ namespace ResearchFeatureEngine.Composition
     {
         /// <summary>
         /// Constructs the selected reference source.
+        ///
+        /// <para>
+        /// For <see cref="ReferenceType.HmaAtrSmooth"/> the composite
+        /// requires both the ATRSmooth and the HMA configuration and
+        /// constructs exactly one instance of each canonical producer
+        /// inside the returned
+        /// <see cref="Sources.HmaAtrSmoothCompositeSource"/>; the
+        /// Darvas configuration is inert.
+        /// </para>
         /// </summary>
         /// <param name="type">
         /// The reference model to construct. Determines which
@@ -31,16 +40,21 @@ namespace ResearchFeatureEngine.Composition
         /// arguments are ignored (inert).
         /// </param>
         /// <param name="atrSmoothConfiguration">
-        /// Configuration consumed when
-        /// <paramref name="type"/> is
-        /// <see cref="ReferenceType.ATRSmooth2"/>. Must be non-null
-        /// for that selection.
+        /// Configuration consumed when <paramref name="type"/> is
+        /// <see cref="ReferenceType.ATRSmooth2"/> or
+        /// <see cref="ReferenceType.HmaAtrSmooth"/>. Must be non-null
+        /// for those selections.
         /// </param>
         /// <param name="darvasBoxConfiguration">
-        /// Configuration consumed when
-        /// <paramref name="type"/> is
+        /// Configuration consumed when <paramref name="type"/> is
         /// <see cref="ReferenceType.DarvasBox"/>. Must be non-null for
         /// that selection.
+        /// </param>
+        /// <param name="hmaConfiguration">
+        /// Configuration consumed when <paramref name="type"/> is
+        /// <see cref="ReferenceType.Hma"/> or
+        /// <see cref="ReferenceType.HmaAtrSmooth"/>. Must be non-null
+        /// for those selections.
         /// </param>
         /// <returns>The single constructed reference source.</returns>
         /// <exception cref="ArgumentNullException">
@@ -53,7 +67,8 @@ namespace ResearchFeatureEngine.Composition
         public static IReferenceSource Create(
             ReferenceType type,
             ATRSmoothConfiguration? atrSmoothConfiguration,
-            DarvasBoxConfiguration? darvasBoxConfiguration)
+            DarvasBoxConfiguration? darvasBoxConfiguration,
+            HmaConfiguration? hmaConfiguration)
         {
             switch (type)
             {
@@ -72,6 +87,28 @@ namespace ResearchFeatureEngine.Composition
                                 nameof(darvasBoxConfiguration),
                                 "DarvasBox selection requires a non-null "
                                 + "DarvasBoxConfiguration."));
+
+                case ReferenceType.Hma:
+                    return new HmaReferenceSource(
+                        hmaConfiguration
+                            ?? throw new ArgumentNullException(
+                                nameof(hmaConfiguration),
+                                "Hma selection requires a non-null "
+                                + "HmaConfiguration."));
+
+                case ReferenceType.HmaAtrSmooth:
+                    return new HmaAtrSmoothCompositeSource(
+                        new HmaAtrSmoothConfiguration(
+                            atrSmoothConfiguration
+                                ?? throw new ArgumentNullException(
+                                    nameof(atrSmoothConfiguration),
+                                    "HmaAtrSmooth selection requires a non-null "
+                                    + "ATRSmoothConfiguration."),
+                            hmaConfiguration
+                                ?? throw new ArgumentNullException(
+                                    nameof(hmaConfiguration),
+                                    "HmaAtrSmooth selection requires a non-null "
+                                    + "HmaConfiguration.")));
 
                 default:
                     throw new ArgumentOutOfRangeException(

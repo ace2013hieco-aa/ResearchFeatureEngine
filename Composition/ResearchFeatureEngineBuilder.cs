@@ -86,6 +86,35 @@ namespace ResearchFeatureEngine.Composition
                         darvasSource2));
             }
 
+            // Dual-reference HMA + ATRSmooth research features: only
+            // when the composite dual-reference source is active. The
+            // composite (HmaAtrSmoothCompositeSource) has already
+            // advanced BOTH canonical producers for this bar by the
+            // time the Reference stage completes, so both stages below
+            // read the current-bar canonical Runtime values from the
+            // SAME source instances — no duplicate indicator
+            // calculations, no re-instantiated copies. Registration is
+            // type-gated exactly like the Darvas stages above: every
+            // other reference mode (ATRSmooth2 / DarvasBox / Hma alone)
+            // never constructs these stages and keeps its exact
+            // previous behavior.
+            if (_configuration.ReferenceSource is Reference.Sources.HmaAtrSmoothCompositeSource compositeSource)
+            {
+                builder.Add(
+                    new MeanHmaAtrSmoothDistanceEngine(
+                        context,
+                        new MeanHmaAtrSmoothDistanceModel(_configuration.Options.MeanHmaAtrSmoothWindowSize),
+                        compositeSource.HmaSource,
+                        compositeSource.AtrSmoothSource));
+
+                builder.Add(
+                    new HmaPriceAtrSmoothAlignmentEngine(
+                        context,
+                        new HmaPriceAtrSmoothAlignmentModel(),
+                        compositeSource.HmaSource,
+                        compositeSource.AtrSmoothSource));
+            }
+
             builder.Add(
                 new ReversalEngine(context, _configuration.Options.ReversalMode));
 

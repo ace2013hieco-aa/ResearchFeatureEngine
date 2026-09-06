@@ -37,7 +37,8 @@ namespace ResearchFeatureEngine.Tests.Engines
             IReferenceSource source = ReferenceSourceFactory.Create(
                 ReferenceType.DarvasBox,
                 atrSmoothConfiguration: null,
-                darvasBoxConfiguration: new DarvasBoxConfiguration(5));
+                darvasBoxConfiguration: new DarvasBoxConfiguration(5),
+                hmaConfiguration: null);
 
             var options = new EngineOptions
             {

@@ -23,6 +23,13 @@ namespace ResearchFeatureEngine.Composition
         public int MeanDarvasWindowSize { get; set; } = 20;
 
         /// <summary>
+        /// Gets or sets the mean HMA–ATRSmooth distance window size.
+        /// Inert unless the dual-reference (HMA + ATRSmooth)
+        /// composition is active.
+        /// </summary>
+        public int MeanHmaAtrSmoothWindowSize { get; set; } = 20;
+
+        /// <summary>
         /// Gets or sets the quantity whose rolling statistics are
         /// computed by the Statistics stage (raw closes, simple
         /// returns, or log returns).

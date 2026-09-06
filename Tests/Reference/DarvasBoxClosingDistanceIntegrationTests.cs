@@ -91,7 +91,8 @@ namespace ResearchFeatureEngine.Tests.Reference
             IReferenceSource source = ReferenceSourceFactory.Create(
                 ReferenceType.DarvasBox,
                 atrSmoothConfiguration: null,
-                darvasBoxConfiguration: new DarvasBoxConfiguration(5));
+                darvasBoxConfiguration: new DarvasBoxConfiguration(5),
+                hmaConfiguration: null);
 
             var configuration = new EngineConfiguration(
                 md,
@@ -506,7 +507,8 @@ namespace ResearchFeatureEngine.Tests.Reference
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(
                     atrPeriod: 14, atrMultiplier: 5.1, smoothLength: 20),
-                darvasBoxConfiguration: null);
+                darvasBoxConfiguration: null,
+                hmaConfiguration: null);
 
             var configuration = new EngineConfiguration(
                 md,

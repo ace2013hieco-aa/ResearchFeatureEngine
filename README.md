@@ -119,8 +119,22 @@ Exactly ONE reference model is active per engine instance, selected by the **Ref
 | --- | --- | --- | --- |
 | `ATRSmooth2` | `(VWMA(close, smoothLength) + ATRTrailingStop) / 2` | trailing-stop position bias: +1 bullish / -1 bearish / 0 initial | strict transition of the regime — a trailing-stop flip. **Crossing the ATRSmooth published reference line is not itself an ATRSmooth reversal.** |
 | `DarvasBox` | `(Upper + Lower) / 2` of the current box | positional state: +1 close above Upper / 0 inside (real persistent state) / -1 close below Lower | strict transitions of the positional regime — includes breakout and return-to-box transitions. The box midpoint jumps on box replacement; that structural effect is intentional and is never smoothed. |
+| `HmaAtrSmooth` | ATRSmooth2 equilibrium (the composite keeps the ATRSmooth2 pipeline semantics bit-identically) | trailing-stop position bias (ATRSmooth2) | identical to `ATRSmooth2` — the HMA is an additive parallel canonical value, not a replacement measurement level. |
 
 `Reference.Price` is the source-defined scalar measurement level against which Distance measures signed price deviation — it is not universally an "equilibrium price" (the Darvas box midpoint is a measurement level, not an equilibrium).
+
+### Dual-reference mode (v1.3)
+
+`HmaAtrSmooth` is the explicit composite dual-reference mode: the engine owns exactly one canonical `HmaReferenceSource` (HMA of close, period `HMA Period`; direct window recompute — O(P^1.5)/bar, no incremental state) and one canonical `ATRSmoothReferenceSource`, both advanced once per bar by `HmaAtrSmoothCompositeSource`. Selecting `Hma` alone constructs only the HMA source — ATRSmooth is never silently instantiated. The canonical HMA value is published in `ReferenceRuntime.Hma` (NaN until index `P + floor(sqrt(P)) - 2`; e.g. bar 18 at P=16). The HMA source's warm-up close fallback (`ComputeReference` return) is a pipeline-contract value only — the research features below never consume it.
+
+Two research stages are registered only in this mode (after Reference, before Reversal):
+
+| Stage | Formula | Notes |
+| --- | --- | --- |
+| **Mean HMA–ATRSmooth Distance** | `mean(HMA − ATRSmooth)` over `Mean HMA-ATRSmooth Window` | signed; + = HMA above the smoothed equilibrium. True O(1)/bar (running sum, no per-bar allocation). NaN until `Runtime.Hma` is genuinely valid. |
+| **HMA/Price–ATRSmooth Alignment** | `Aligned(+1) iff (HMA > ATRSmooth) == (Close > ATRSmooth)`, else `Misaligned(−1)`; `Unavailable(0)` during warm-up or exact equality | current-bar state only — no rolling mean, no smoothing, no hysteresis, no epsilon (strict `>` / `<`). |
+
+Both stages consume the canonical producer runtimes directly — no duplicate indicator calculations. The HMA implementation is pinned by oracle-first golden tests (`Tests/Reference/HmaReferenceSourceGoldenTests.cs`): constant series produce exactly the constant, ramp/random fixtures match an independent direct-definition oracle bit-for-bit, and the warm-up boundary is exact.
 
 ---
 

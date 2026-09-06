@@ -31,7 +31,7 @@ namespace ResearchFeatureEngine.Indicators
     /// Pipeline:
     ///   cTrader Bars
     ///     → CTraderMarketData
-    ///     → selected reference source (ATRSmooth2 or DarvasBox,
+    ///     → selected reference source (ATRSmooth2 or DarvasBox or HMA,
     ///       via ReferenceSourceFactory — exactly one is constructed)
     ///     → ReferenceEngine → DistanceEngine → ScaleEngine →
     ///       NormalizationEngine → StatisticsEngine
@@ -52,7 +52,11 @@ namespace ResearchFeatureEngine.Indicators
         // constructed in Initialize() (see ReferenceSourceFactory);
         // the non-selected group's parameters are inert — never
         // read, never validated. cTrader displays all parameter
-        // groups simultaneously; that is expected.
+        // groups simultaneously; that is expected. HmaAtrSmooth is
+        // the composite dual-reference mode: ATRSmooth drives the
+        // pipeline measurement level/regime, and the canonical HMA
+        // is computed in parallel for the dual-reference research
+        // features.
         [Parameter("Reference Type", Group = "Reference",
             DefaultValue = ReferenceType.ATRSmooth2)]
         public ReferenceType ReferenceType { get; set; }
@@ -75,6 +79,16 @@ namespace ResearchFeatureEngine.Indicators
         [Parameter("Box Length", Group = "Reference: Darvas Box", DefaultValue = 5,
             MinValue = 3)]
         public int DarvasLength { get; set; }
+
+        // HMA parameters. Only read when the selected
+        // reference type is HMA or the composite HmaAtrSmooth mode.
+        [Parameter("HMA Period", Group = "Reference: HMA", DefaultValue = 16,
+            MinValue = 2)]
+        public int HmaPeriod { get; set; }
+
+        [Parameter("Mean HMA-ATRSmooth Window", Group = "Research Features",
+            DefaultValue = 20, MinValue = 1)]
+        public int MeanHmaAtrSmoothWindowSize { get; set; }
 
         [Parameter("Mean Darvas Window", Group = "Research Features",
             DefaultValue = 20, MinValue = 1)]
@@ -168,11 +182,34 @@ namespace ResearchFeatureEngine.Indicators
         public IndicatorDataSeries MeanDarvasSignedDistanceSeries { get; set; }
 
         // ---------------------------------------------------------
+        // HMA/ATRSmooth dual-reference feature outputs
+        // ---------------------------------------------------------
+        // Only populated when ReferenceType == HmaAtrSmooth (the
+        // composite dual-reference mode). For every other mode they
+        // remain NaN / Unavailable (gap in Data Window).
+
+        [Output("Mean HMA-ATRSmooth Distance", LineColor = "Brown", Thickness = 1, IsVisible = false)]
+        public IndicatorDataSeries MeanHmaAtrSmoothDistanceSeries { get; set; }
+
+        [Output("HMA-Price-ATRSmooth Alignment", LineColor = "Gray", Thickness = 1, IsVisible = false)]
+        public IndicatorDataSeries HmaPriceAtrSmoothAlignmentSeries { get; set; }
+
+        // Minimum forensic output needed to validate the composite
+        // mode on live charts: the canonical HMA value the
+        // dual-reference features actually consume. NaN during HMA
+        // warm-up (genuinely unavailable, not the close fallback);
+        // NaN for every non-composite mode (the HMA producer is not
+        // constructed there).
+        [Output("HMA (Composite)", LineColor = "DarkOrange", Thickness = 1, IsVisible = false)]
+        public IndicatorDataSeries HmaCompositeSeries { get; set; }
+
+        // ---------------------------------------------------------
         // Engine state
         // ---------------------------------------------------------
 
         private ResearchFeatureEngine _engine;
         private DarvasBoxReferenceSource? _darvasSource;
+        private HmaAtrSmoothCompositeSource? _compositeSource;
         private EngineValues _values;
         private IMarketData _marketData;
         private int _lastProcessedIndex;
@@ -185,24 +222,40 @@ namespace ResearchFeatureEngine.Indicators
         {
             _marketData = new CTraderMarketData(Bars);
 
+            bool useAtrSmooth = ReferenceType == Core.ReferenceType.ATRSmooth2
+                || ReferenceType == Core.ReferenceType.HmaAtrSmooth;
+            bool useDarvas = ReferenceType == Core.ReferenceType.DarvasBox;
+            bool useHma = ReferenceType == Core.ReferenceType.Hma
+                || ReferenceType == Core.ReferenceType.HmaAtrSmooth;
+
             // Exclusive construction: exactly ONE reference source is
             // built from the selected ReferenceType. The non-selected
-            // model's parameters are never read or validated.
+            // model's parameters are never read or validated. The
+            // HmaAtrSmooth selection constructs the composite, which
+            // owns exactly one canonical HMA source AND exactly one
+            // canonical ATRSmooth source.
             var referenceSource = ReferenceSourceFactory.Create(
                 ReferenceType,
-                ReferenceType == Core.ReferenceType.ATRSmooth2
+                useAtrSmooth
                     ? new ATRSmoothConfiguration(
                         atrPeriod: AtrPeriod,
                         atrMultiplier: AtrMultiplier,
                         smoothLength: SmoothLength)
                     : null,
-                ReferenceType == Core.ReferenceType.DarvasBox
+                useDarvas
                     ? new DarvasBoxConfiguration(DarvasLength)
+                    : null,
+                useHma
+                    ? new HmaConfiguration(HmaPeriod)
                     : null);
 
             // Typed view for Darvas read-only diagnostics (Upper/Lower/HasBox).
             // No math is performed here; only surfacing the production source's state.
             _darvasSource = referenceSource as DarvasBoxReferenceSource;
+
+            // Typed view for the composite's canonical HMA producer
+            // (read-only forensic publish of Runtime.Hma below).
+            _compositeSource = referenceSource as HmaAtrSmoothCompositeSource;
 
             var statisticModels = new System.Collections.Generic.List<IStatisticModel>
             {
@@ -222,6 +275,7 @@ namespace ResearchFeatureEngine.Indicators
             {
                 StatisticsWindowSize = StatisticsWindowSize,
                 MeanDarvasWindowSize = MeanDarvasWindowSize,
+                MeanHmaAtrSmoothWindowSize = MeanHmaAtrSmoothWindowSize,
                 ReversalMode = ReversalMode
             };
 
@@ -356,6 +410,19 @@ namespace ResearchFeatureEngine.Indicators
                 AbsoluteClosingDistanceSeries[index] = double.NaN;
                 MeanDarvasSignedDistanceSeries[index] = double.NaN;
             }
+
+            // HMA/ATRSmooth dual-reference features: populated only in
+            // the composite mode; NaN / 0 (Unavailable) for every
+            // other reference type (feature absent).
+            MeanHmaAtrSmoothDistanceSeries[index] = _values.MeanHmaAtrSmoothDistance.MeanSignedDistance;
+            HmaPriceAtrSmoothAlignmentSeries[index] = (int)_values.HmaPriceAtrSmoothAlignment.Alignment;
+
+            // Forensic HMA (composite mode only): the canonical HMA
+            // value the dual-reference features consume. NaN during
+            // HMA warm-up and in every non-composite mode.
+            HmaCompositeSeries[index] = _compositeSource != null
+                ? _compositeSource.HmaSource.Runtime.Hma
+                : double.NaN;
         }
     }
 }

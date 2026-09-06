@@ -44,6 +44,12 @@ namespace ResearchFeatureEngine.Reference.Runtime
         /// </summary>
         public double SumV { get; internal set; }
 
+        // HMA state
+        /// <summary>
+        /// Gets the current Hull Moving Average value.
+        /// </summary>
+        public double Hma { get; internal set; }
+
         /// <summary>
         /// Gets the most recently published reference price.
         /// </summary>
@@ -66,6 +72,7 @@ namespace ResearchFeatureEngine.Reference.Runtime
             Position = 0.0;
             SumPV = 0.0;
             SumV = 0.0;
+            Hma = 0.0;
             LastReference = 0.0;
             IsInitialized = false;
         }

@@ -61,13 +61,14 @@ namespace ResearchFeatureEngine.Tests.Reference
                 ReferenceType type,
                 ATRSmoothConfiguration atrCfg,
                 DarvasBoxConfiguration darvasCfg,
+                HmaConfiguration hmaCfg,
                 double[] close,
                 int dataSeed)
         {
             var md = MakeMarketData(close, dataSeed);
 
             IReferenceSource source = ReferenceSourceFactory.Create(
-                type, atrCfg, darvasCfg);
+                type, atrCfg, darvasCfg, hmaCfg);
 
             var configuration = new EngineConfiguration(
                 md,
@@ -100,7 +101,8 @@ namespace ResearchFeatureEngine.Tests.Reference
             var source = ReferenceSourceFactory.Create(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(),
-                new DarvasBoxConfiguration());
+                new DarvasBoxConfiguration(),
+                new HmaConfiguration());
 
             Assert.IsType<ATRSmoothReferenceSource>(source);
             Assert.IsNotType<DarvasBoxReferenceSource>(source);
@@ -112,10 +114,25 @@ namespace ResearchFeatureEngine.Tests.Reference
             var source = ReferenceSourceFactory.Create(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(),
-                new DarvasBoxConfiguration());
+                new DarvasBoxConfiguration(),
+                new HmaConfiguration());
 
             Assert.IsType<DarvasBoxReferenceSource>(source);
             Assert.IsNotType<ATRSmoothReferenceSource>(source);
+        }
+
+        [Fact]
+        public void Factory_HmaSelection_ConstructsHmaSourceOnly()
+        {
+            var source = ReferenceSourceFactory.Create(
+                ReferenceType.Hma,
+                new ATRSmoothConfiguration(),
+                new DarvasBoxConfiguration(),
+                new HmaConfiguration());
+
+            Assert.IsType<HmaReferenceSource>(source);
+            Assert.IsNotType<ATRSmoothReferenceSource>(source);
+            Assert.IsNotType<DarvasBoxReferenceSource>(source);
         }
 
         [Fact]
@@ -123,11 +140,15 @@ namespace ResearchFeatureEngine.Tests.Reference
         {
             Assert.Throws<ArgumentNullException>(
                 () => ReferenceSourceFactory.Create(
-                    ReferenceType.ATRSmooth2, null, new DarvasBoxConfiguration()));
+                    ReferenceType.ATRSmooth2, null, new DarvasBoxConfiguration(), new HmaConfiguration()));
 
             Assert.Throws<ArgumentNullException>(
                 () => ReferenceSourceFactory.Create(
-                    ReferenceType.DarvasBox, new ATRSmoothConfiguration(), null));
+                    ReferenceType.DarvasBox, new ATRSmoothConfiguration(), null, new HmaConfiguration()));
+
+            Assert.Throws<ArgumentNullException>(
+                () => ReferenceSourceFactory.Create(
+                    ReferenceType.Hma, new ATRSmoothConfiguration(), new DarvasBoxConfiguration(), null));
         }
 
         [Fact]
@@ -136,7 +157,7 @@ namespace ResearchFeatureEngine.Tests.Reference
             Assert.Throws<ArgumentOutOfRangeException>(
                 () => ReferenceSourceFactory.Create(
                     (ReferenceType)99, new ATRSmoothConfiguration(),
-                    new DarvasBoxConfiguration()));
+                    new DarvasBoxConfiguration(), new HmaConfiguration()));
         }
 
         // -------------------------------------------------------------
@@ -155,10 +176,10 @@ namespace ResearchFeatureEngine.Tests.Reference
 
             var (valuesA, _) = RunEngine(
                 ReferenceType.ATRSmooth2, atrCfg,
-                new DarvasBoxConfiguration(5), close, 7);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 7);
             var (valuesB, _) = RunEngine(
                 ReferenceType.ATRSmooth2, atrCfg,
-                new DarvasBoxConfiguration(500), close, 7);
+                new DarvasBoxConfiguration(500), new HmaConfiguration(), close, 7);
 
             Assert.Equal(
                 valuesA.Reference.Price,
@@ -186,11 +207,11 @@ namespace ResearchFeatureEngine.Tests.Reference
             var (valuesA, _) = RunEngine(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                darvasCfg, close, 7);
+                darvasCfg, new HmaConfiguration(), close, 7);
             var (valuesB, _) = RunEngine(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(3, 0.5, 2),
-                darvasCfg, close, 7);
+                darvasCfg, new HmaConfiguration(), close, 7);
 
             Assert.Equal(
                 valuesA.Reference.Price,
@@ -218,11 +239,11 @@ namespace ResearchFeatureEngine.Tests.Reference
             var (valuesA, _) = RunEngine(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 13);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 13);
             var (valuesB, _) = RunEngine(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 13);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 13);
 
             Assert.Equal(valuesA.Reference.Price, valuesB.Reference.Price);
             Assert.Equal(valuesA.Reference.Regime, valuesB.Reference.Regime);
@@ -239,11 +260,11 @@ namespace ResearchFeatureEngine.Tests.Reference
             var (valuesA, _) = RunEngine(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 13);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 13);
             var (valuesB, _) = RunEngine(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 13);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 13);
 
             Assert.Equal(valuesA.Reference.Price, valuesB.Reference.Price);
             Assert.Equal(valuesA.Reference.Regime, valuesB.Reference.Regime);
@@ -267,12 +288,12 @@ namespace ResearchFeatureEngine.Tests.Reference
             var (atrValues, _) = RunEngine(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 3);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 3);
 
             var (darvasValues, darvasCfg) = RunEngine(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 3);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 3);
 
             Assert.IsType<DarvasBoxReferenceSource>(
                 darvasCfg.ReferenceSource);
@@ -295,12 +316,12 @@ namespace ResearchFeatureEngine.Tests.Reference
             var (darvasValues, _) = RunEngine(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 3);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 3);
 
             var (atrValues, atrCfg) = RunEngine(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 3);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 3);
 
             Assert.IsType<ATRSmoothReferenceSource>(
                 atrCfg.ReferenceSource);
@@ -321,15 +342,15 @@ namespace ResearchFeatureEngine.Tests.Reference
             var (atr1, _) = RunEngine(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 21);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 21);
             var (dar1, _) = RunEngine(
                 ReferenceType.DarvasBox,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 21);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 21);
             var (atr2, _) = RunEngine(
                 ReferenceType.ATRSmooth2,
                 new ATRSmoothConfiguration(16, 5.1, 100),
-                new DarvasBoxConfiguration(5), close, 21);
+                new DarvasBoxConfiguration(5), new HmaConfiguration(), close, 21);
 
             Assert.NotEqual(atr1.Reference.Price, dar1.Reference.Price);
             Assert.Equal(atr1.Reference.Price, atr2.Reference.Price);
