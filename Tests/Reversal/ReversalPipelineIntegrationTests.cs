@@ -56,11 +56,11 @@ namespace ResearchFeatureEngine.Tests.Reversal
             //
             // Drive the pipeline with the known dataset and, at each
             // bar, recompute the expected regime from the published
-            // Reference.TrendPosition (the ATR trailing-stop position
+            // Reference.Regime (the ATR trailing-stop position
             // bias — the canonical ATR Smooth regime state). A
             // reversal in the engine output must correspond to a
-            // strict sign change of the regime between consecutive
-            // bars (> 0 is ABOVE, <= 0 is BELOW), and a mere
+            // strict change of the regime between consecutive
+            // bars, and a mere
             // close-vs-reference cross without a regime change must
             // NOT produce a reversal. This verifies the engine's
             // default reversal detection against an independent
@@ -85,7 +85,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
             {
                 engine.Update();
 
-                double position = engine.Values.Reference.TrendPosition;
+                double position = engine.Values.Reference.Regime;
                 bool above = position > 0.0;
 
                 if (hasPrev && above != prevAbove)

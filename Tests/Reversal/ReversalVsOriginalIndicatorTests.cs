@@ -25,7 +25,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
     /// reference "reversals" we compare against. Because the
     /// production <see cref="ATRSmoothReferenceSource"/> is a faithful
     /// transcription of that same algorithm, the published
-    /// <see cref="ReferenceRuntimeValues.TrendPosition"/> must equal
+    /// <see cref="ReferenceRuntimeValues.Regime"/> must equal
     /// the original <c>pos</c> bar-for-bar, and therefore the
     /// production reversal bars/directions must match the original
     /// <c>pos</c> flips.
@@ -166,10 +166,10 @@ namespace ResearchFeatureEngine.Tests.Reversal
 
                 double pos = original.Compute(idx, close, high, low, prevClose);
 
-                // The published TrendPosition must equal the original
+                // The published Regime must equal the original
                 // pos bar-for-bar (the production source is a faithful
                 // transcription).
-                Assert.Equal(pos, engine.Values.Reference.TrendPosition, 10);
+                Assert.Equal(pos, engine.Values.Reference.Regime, 10);
 
                 // Original pos flip => expected reversal.
                 bool originalFlip = idx > 0 && pos != prevPos && pos != 0.0;

@@ -1,5 +1,4 @@
 using System;
-
 using ResearchFeatureEngine.Core;
 using ResearchFeatureEngine.Core.Engine;
 using ResearchFeatureEngine.Engines;
@@ -10,6 +9,7 @@ using ResearchFeatureEngine.Reversal;
 using ResearchFeatureEngine.Scale;
 using ResearchFeatureEngine.Scale.Models;
 using ResearchFeatureEngine.Statistics;
+using ResearchFeatureEngine.Statistics.Models;
 using ResearchFeatureEngine.Statistics.Runtime;
 
 namespace ResearchFeatureEngine.Composition
@@ -60,6 +60,31 @@ namespace ResearchFeatureEngine.Composition
                     context,
                     new ReferenceDistanceModel(
                         _configuration.MarketData)));
+
+            // Darvas Box closing-distance research feature: registered
+            // ONLY when the composed reference source is the canonical
+            // Darvas source (the feature reads the box boundaries
+            // from that same instance). For any other reference type
+            // the stage is absent — no behavior change for ATRSmooth
+            // or future reference sources.
+            if (_configuration.ReferenceSource is Reference.Sources.DarvasBoxReferenceSource darvasSource)
+            {
+                builder.Add(
+                    new DarvasBoxDistanceEngine(
+                        context,
+                        new DarvasBoxClosingDistanceModel(),
+                        darvasSource));
+            }
+
+            // Mean Darvas Closing Distance: only when the Darvas source is active
+            if (_configuration.ReferenceSource is Reference.Sources.DarvasBoxReferenceSource darvasSource2)
+            {
+                builder.Add(
+                    new MeanDarvasClosingDistanceEngine(
+                        context,
+                        new MeanDarvasClosingDistanceModel(_configuration.Options.MeanDarvasWindowSize),
+                        darvasSource2));
+            }
 
             builder.Add(
                 new ReversalEngine(context, _configuration.Options.ReversalMode));

@@ -1,33 +1,44 @@
-# ATRSmooth Reversal Feature
+# Reversal Feature
 
 ## Definition
 
-A **reversal** is a transition of the **ATR Smooth regime itself**
-between consecutive bars — a FLIP EVENT, not a line crossing.
+A **reversal** is a **strict state transition of the source-declared
+signed regime state** between consecutive bars — a REGIME event, not a
+line crossing.
 
-The canonical ATR Smooth regime state is the trailing-stop position
-bias published as `Reference.TrendPosition` (1 = bullish/long bias,
--1 = bearish/short bias, 0 = flat), computed by
-`ATRSmoothReferenceSource` and verified bar-for-bar against the
-original `AtrTrailingStopSmoothed` `pos` series on 10 000 real
-EURUSD M1 bars.
+The regime state is published by the selected reference source as
+`Reference.Regime`. The semantics are defined by each reference source
+and are opaque to the reversal engine:
 
-| Regime | Condition |
+- **ATRSmooth2**: the trailing-stop position bias
+  (+1 bullish/long bias, -1 bearish/short bias, 0 initial/uncommitted),
+  computed by `ATRSmoothReferenceSource` and verified bar-for-bar
+  against the original `AtrTrailingStopSmoothed` `pos` series on
+  10 000 real EURUSD M1 bars.
+- **Darvas Box**: the positional state
+  (+1 close above the upper boundary, 0 close inside the box — a real
+  persistent Darvas state, NOT bearish, -1 close below the lower
+  boundary), computed by `DarvasBoxReferenceSource`.
+
+A reversal is a strict change of the regime value:
+
+| Transition | Direction |
 | --- | --- |
-| Bullish (ABOVE) | `TrendPosition > 0` (long bias) |
-| Bearish (BELOW) | `TrendPosition <= 0` (short/flat bias) |
-
-A reversal is a **strict regime change**:
-
-| Reversal | Direction |
-| --- | --- |
-| Bullish → Bearish | `Down` (bearish) |
-| Bearish → Bullish | `Up` (bullish) |
+| 0 → +1 (inside → above) | `Up` (breakout) |
+| 0 → -1 (inside → below) | `Down` |
+| +1 → 0 (above → inside) | `Down` (return to box) |
+| -1 → 0 (below → inside) | `Up` (return to box) |
+| -1 → +1 | `Up` |
+| +1 → -1 | `Down` |
+| equal states | never a reversal |
 
 **A candle crossing the ATR Smooth line while the regime stays
-unchanged is NOT a reversal.** Only the current and the previous bar
-are consulted — no future bar is read (no lookahead), so historical
-replay and live/incremental processing produce identical results.
+unchanged is NOT a reversal.** Darvas reversal semantics are strict
+transitions of the Darvas positional regime and therefore include
+breakout and return-to-box transitions. Only the current and the
+previous bar are consulted — no future bar is read (no lookahead), so
+historical replay and live/incremental processing produce identical
+results.
 
 ## Outputs
 
@@ -70,15 +81,18 @@ Selectable via the cTrader **Reversal Mode** parameter and
 
 | Mode | Relation | Reversal |
 | --- | --- | --- |
-| `TrailingStopPosition` (default) | sign of the ATR trailing-stop position bias (`Reference.TrendPosition`); `> 0` (long bias) is ABOVE, `<= 0` (short/flat) is BELOW | strict sign change (a flip in the trailing stop's own bias) — the canonical reversal semantic |
+| `TrailingStopPosition` (default) | source-declared signed regime (`Reference.Regime`) | strict state transition — increase (0 → +1, -1 → 0, -1 → +1) is Up, decrease (+1 → 0, 0 → -1, +1 → -1) is Down, equal states never. For ATRSmooth2 this reproduces the original `AtrTrailingStopSmoothed` `pos` flips; for Darvas Box it covers breakout and return-to-box transitions. |
 | `CloseToReference` (explicit opt-in) | sign of `close − reference` (`DirectionalExtension`); `>= reference` is ABOVE, `<` is BELOW | strict side change — treats a candle crossing the line as a reversal |
 
-`TrailingStopPosition` mode reproduces the original
-`AtrTrailingStopSmoothed` indicator's `pos` flips; verified
-bar-for-bar against an independent reimplementation on 10 000 real
-EURUSD M1 bars. It is the DEFAULT because the research specification
-defines a reversal as an ATR Smooth REGIME FLIP, not as a candle
-crossing the ATR Smooth line.
+`TrailingStopPosition` mode is generic: it operates on the
+source-declared regime without interpreting its meaning. For
+ATRSmooth2 it reproduces the original `AtrTrailingStopSmoothed`
+indicator's `pos` flips (verified bar-for-bar against an independent
+reimplementation on 10 000 real EURUSD M1 bars); for Darvas Box it
+covers breakout and return-to-box transitions of the positional
+regime. It is the DEFAULT because the research specification defines
+a reversal as a REGIME transition of the selected reference, not as a
+candle crossing the reference line.
 
 ## Equality behavior
 

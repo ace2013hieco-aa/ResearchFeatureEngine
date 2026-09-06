@@ -18,6 +18,11 @@ namespace ResearchFeatureEngine.Composition
         public int StatisticsWindowSize { get; set; } = 20;
 
         /// <summary>
+        /// Gets or sets the mean Darvas closing distance window size.
+        /// </summary>
+        public int MeanDarvasWindowSize { get; set; } = 20;
+
+        /// <summary>
         /// Gets or sets the quantity whose rolling statistics are
         /// computed by the Statistics stage (raw closes, simple
         /// returns, or log returns).

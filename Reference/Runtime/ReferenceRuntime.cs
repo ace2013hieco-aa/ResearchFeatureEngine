@@ -17,6 +17,7 @@ namespace ResearchFeatureEngine.Reference.Runtime
         /// </summary>
         public int CurrentIndex { get; internal set; } = -1;
 
+        // ATRSmooth state
         /// <summary>
         /// Gets the EMA of the True Range over the ATR lookback.
         /// </summary>

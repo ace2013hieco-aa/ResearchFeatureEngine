@@ -23,7 +23,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
     ///
     /// The canonical ATR Smooth regime state is the trailing-stop
     /// position bias published as
-    /// <see cref="ReferenceRuntimeValues.TrendPosition"/>
+    /// <see cref="ReferenceRuntimeValues.Regime"/>
     /// (1 = bullish/long bias, -1 = bearish/short bias, 0 = flat),
     /// computed by <c>ATRSmoothReferenceSource</c> and verified
     /// bar-for-bar against the original <c>AtrTrailingStopSmoothed</c>
@@ -31,7 +31,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
     ///
     /// These tests drive the <see cref="ReversalEngine"/> through its
     /// DEFAULT constructor (the semantic under test) and decouple the
-    /// two relations by setting <c>TrendPosition</c> (regime) and
+    /// two relations by setting <c>Regime</c> (regime) and
     /// <c>DirectionalExtension</c> (price-vs-line) independently:
     ///
     ///   * under the INCORRECT semantics (reversal = candle crossing
@@ -57,7 +57,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
 
         /// <summary>
         /// Processes one bar with the regime state
-        /// (<paramref name="trendPosition"/>) and the price-vs-line
+        /// (<paramref name="regime"/>) and the price-vs-line
         /// relation (<paramref name="directionalExtension"/>) set
         /// independently — the key to exposing the conflation bug.
         /// </summary>
@@ -66,10 +66,10 @@ namespace ResearchFeatureEngine.Tests.Reversal
             EngineContext context,
             EngineValues values,
             int index,
-            double trendPosition,
+            double regime,
             double directionalExtension)
         {
-            values.Reference.TrendPosition = trendPosition;
+            values.Reference.Regime = regime;
             values.Distance.DirectionalExtension = directionalExtension;
             context.SetIndex(index);
             engine.Update();
@@ -302,7 +302,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
         // PIPELINE EQUIVALENCE — the DEFAULT pipeline configuration
         // must behave bar-for-bar identically to an explicit
         // TrailingStopPosition configuration on real data, and every
-        // reversal bar must be a TrendPosition flip bar (never a mere
+        // reversal bar must be a Regime flip bar (never a mere
         // price-vs-reference cross).
         // -------------------------------------------------------------
 
@@ -387,7 +387,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
                     engine2.Values.Reversal.IsReversalBar,
                     engine1.Values.Reversal.IsReversalBar);
 
-                double pos = engine1.Values.Reference.TrendPosition;
+                double pos = engine1.Values.Reference.Regime;
                 double close = md1.Close[idx];
                 double reference = engine1.Values.Reference.Price;
                 bool above = close >= reference;

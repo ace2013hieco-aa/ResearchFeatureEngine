@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>ResearchFeatureEngine.Indicators</RootNamespace>
+    <AssemblyName>DarvasBoxVisualValidationIndicator</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="cTrader.Automate" Version="1.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ResearchFeatureEngine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="**\*.Tests.cs" />
+  </ItemGroup>
+
+</Project>

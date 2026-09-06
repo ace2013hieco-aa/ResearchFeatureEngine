@@ -13,8 +13,6 @@ namespace ResearchFeatureEngine.Tests
         {
             // Reference
             Assert.Equal(expected.Reference.Price, actual.Reference.Price, precision);
-            Assert.Equal(expected.Reference.Slope, actual.Reference.Slope, precision);
-            Assert.Equal(expected.Reference.Direction, actual.Reference.Direction);
 
             // Distance
             Assert.Equal(expected.Distance.DirectionalExtension, actual.Distance.DirectionalExtension, precision);
@@ -36,8 +34,6 @@ namespace ResearchFeatureEngine.Tests
             Assert.Equal(expected.Statistics.Range.Minimum, actual.Statistics.Range.Minimum, precision);
             Assert.Equal(expected.Statistics.Range.Maximum, actual.Statistics.Range.Maximum, precision);
             Assert.Equal(expected.Statistics.Range.Range, actual.Statistics.Range.Range, precision);
-            Assert.Equal(expected.Statistics.Shape.Skewness, actual.Statistics.Shape.Skewness, precision);
-            Assert.Equal(expected.Statistics.Shape.Kurtosis, actual.Statistics.Shape.Kurtosis, precision);
         }
     }
 }

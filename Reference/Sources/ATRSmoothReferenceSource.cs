@@ -89,6 +89,18 @@ namespace ResearchFeatureEngine.Reference.Sources
         public new ATRSmoothConfiguration Configuration =>
             (ATRSmoothConfiguration)base.Configuration;
 
+        /// <summary>
+        /// Gets the ATR trailing-stop position bias for the most recently
+        /// processed index: +1 = bullish (long) bias, -1 = bearish
+        /// (short) bias, 0 = initial/uncommitted. This is the
+        /// source-defined signed regime state consumed by generic
+        /// reversal detection: a strict change of this value is an
+        /// ATRSmooth reversal (a flip of the trailing-stop regime),
+        /// which is NOT the same as a candle crossing the published
+        /// reference line.
+        /// </summary>
+        public override double Regime => Runtime.Position;
+
         /// <inheritdoc />
         public override void Reset()
         {

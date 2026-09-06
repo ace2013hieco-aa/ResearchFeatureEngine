@@ -1,3 +1,4 @@
+using ResearchFeatureEngine.Models;
 using ResearchFeatureEngine.Reversal.Runtime;
 using ResearchFeatureEngine.Statistics.Runtime;
 
@@ -12,6 +13,8 @@ namespace ResearchFeatureEngine.Core
         {
             Reference = new ReferenceRuntimeValues();
             Distance = new DistanceRuntimeValues();
+            DarvasBoxDistance = new DarvasBoxDistanceRuntimeValues();
+            MeanDarvasClosingDistance = new MeanDarvasClosingDistanceRuntimeValues();
             Scale = new ScaleRuntimeValues();
             Normalization = new NormalizationRuntimeValues();
             Statistics = new StatisticsRuntimeValues();
@@ -33,6 +36,27 @@ namespace ResearchFeatureEngine.Core
         /// Gets the distance runtime values.
         /// </summary>
         public DistanceRuntimeValues Distance { get; }
+
+        #endregion
+
+        #region Darvas Box Distance
+
+        /// <summary>
+        /// Gets the Darvas Box closing-distance runtime values
+        /// (close vs. the outer boundary of the current Darvas box;
+        /// NaN while no box is confirmed).
+        /// </summary>
+        public DarvasBoxDistanceRuntimeValues DarvasBoxDistance { get; }
+
+        #endregion
+
+        #region Mean Darvas Closing Distance
+
+        /// <summary>
+        /// Gets the mean Darvas closing distance runtime values
+        /// (rolling mean of signed Darvas closing distances).
+        /// </summary>
+        public MeanDarvasClosingDistanceRuntimeValues MeanDarvasClosingDistance { get; }
 
         #endregion
 
@@ -84,24 +108,25 @@ namespace ResearchFeatureEngine.Core
         public double Price { get; internal set; }
 
         /// <summary>
-        /// Gets the current slope of the market reference.
+        /// Gets the source-defined signed regime state published by the
+        /// selected reference source and consumed by generic reversal
+        /// detection. The semantics are defined by the reference source,
+        /// not by the engine:
+        /// <list type="bullet">
+        /// <item><description>
+        /// ATRSmooth2: +1 = bullish trailing-stop position,
+        /// -1 = bearish trailing-stop position, 0 = initial/uncommitted.
+        /// </description></item>
+        /// <item><description>
+        /// Darvas Box: +1 = close above the upper boundary,
+        /// 0 = close inside the box (a real persistent state),
+        /// -1 = close below the lower boundary.
+        /// </description></item>
+        /// </list>
+        /// A strict change of this value between consecutive bars is a
+        /// reversal for the selected reference.
         /// </summary>
-        public double Slope { get; internal set; }
-
-        /// <summary>
-        /// Gets the current direction of the market reference.
-        /// </summary>
-        public int Direction { get; internal set; }
-
-        /// <summary>
-        /// Gets the ATR trailing-stop position bias published by the
-        /// reference source (1 = long bias, -1 = short bias, 0 = flat).
-        /// Surfaced as a first-class published value so downstream
-        /// stages (e.g. Reversal in
-        /// <see cref="ReversalMode.TrailingStopPosition"/> mode) can
-        /// consume it without coupling to the reference source.
-        /// </summary>
-        public double TrendPosition { get; internal set; }
+        public double Regime { get; internal set; }
     }
 
     /// <summary>

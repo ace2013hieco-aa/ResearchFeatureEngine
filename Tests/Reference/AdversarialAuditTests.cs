@@ -3,6 +3,7 @@ using ResearchFeatureEngine.Adapters;
 using ResearchFeatureEngine.Composition;
 using ResearchFeatureEngine.Core;
 using ResearchFeatureEngine.Core.Engine;
+using ResearchFeatureEngine.Engines;
 using ResearchFeatureEngine.Interfaces;
 using ResearchFeatureEngine.Normalization.Models;
 using ResearchFeatureEngine.Reference;
@@ -244,7 +245,7 @@ namespace ResearchFeatureEngine.Tests.Reference
                 new ATRSmoothConfiguration(14, 5.1, 3));
             source.Initialize();
 
-            var engine = new Engines.ReferenceEngine(ctx, source);
+            var engine = new ReferenceEngine(ctx, source);
             engine.Initialize();
 
             ctx.SetIndex(0);
@@ -261,7 +262,7 @@ namespace ResearchFeatureEngine.Tests.Reference
             // Internal state of the source is not exposed via
             // EngineValues (no TrailingStop, EmaTrueRange, etc.).
             // The structure of EngineValues is fixed and has only
-            // Price/Slope/Direction.
+            // Price/Regime.
         }
 
         // ---------------------------------------------------------
@@ -279,7 +280,7 @@ namespace ResearchFeatureEngine.Tests.Reference
             // Use the full ResearchFeatureEngine so the index advance
             // (which lives in ResearchFeatureEngine.Update) is exercised.
             var pipeline = new EnginePipeline();
-            pipeline.Register(new Engines.ReferenceEngine(ctx, source));
+            pipeline.Register(new ReferenceEngine(ctx, source));
             var engine = new ResearchFeatureEngine(ctx, pipeline);
             pipeline.Initialize();
 
@@ -302,7 +303,7 @@ namespace ResearchFeatureEngine.Tests.Reference
                 new ATRSmoothConfiguration(14, 5.1, 3));
             source.Initialize();
 
-            var engine = new Engines.ReferenceEngine(ctx, source);
+            var engine = new ReferenceEngine(ctx, source);
             engine.Initialize();
 
             // First update processes index 0
@@ -336,7 +337,7 @@ namespace ResearchFeatureEngine.Tests.Reference
             // Construct pipeline WITH context so Pipeline.Reset()
             // propagates Context.Reset().
             var pipeline = new EnginePipeline(ctx);
-            pipeline.Register(new Engines.ReferenceEngine(ctx, source));
+            pipeline.Register(new ReferenceEngine(ctx, source));
             var engine = new ResearchFeatureEngine(ctx, pipeline);
             pipeline.Initialize();
 
@@ -356,7 +357,7 @@ namespace ResearchFeatureEngine.Tests.Reference
                 new ATRSmoothConfiguration(14, 5.1, 3));
             source2.Initialize();
             var pipeline2 = new EnginePipeline(ctx2);
-            pipeline2.Register(new Engines.ReferenceEngine(ctx2, source2));
+            pipeline2.Register(new ReferenceEngine(ctx2, source2));
             var engine2 = new ResearchFeatureEngine(ctx2, pipeline2);
             pipeline2.Initialize();
 
@@ -379,7 +380,7 @@ namespace ResearchFeatureEngine.Tests.Reference
                 new ATRSmoothConfiguration(14, 5.1, 3));
             source.Initialize();
 
-            var engine = new Engines.ReferenceEngine(ctx, source);
+            var engine = new ReferenceEngine(ctx, source);
             engine.Initialize();
 
             ctx.SetIndex(0);
@@ -397,7 +398,7 @@ namespace ResearchFeatureEngine.Tests.Reference
                 new ATRSmoothConfiguration(14, 5.1, 3));
             source.Initialize();
 
-            var engine = new Engines.ReferenceEngine(ctx, source);
+            var engine = new ReferenceEngine(ctx, source);
             engine.Initialize();
 
             ctx.SetIndex(0);

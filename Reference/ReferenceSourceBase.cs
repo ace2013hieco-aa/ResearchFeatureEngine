@@ -40,6 +40,9 @@ namespace ResearchFeatureEngine.Reference
         public ReferenceRuntime Runtime { get; }
 
         /// <inheritdoc />
+        public abstract double Regime { get; }
+
+        /// <inheritdoc />
         public void Initialize()
         {
             Reset();

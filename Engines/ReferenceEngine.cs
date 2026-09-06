@@ -17,10 +17,10 @@ namespace ResearchFeatureEngine.Engines
     /// The engine is intentionally agnostic of the specific reference
     /// algorithm. The source owns its own runtime state
     /// (<see cref="Reference.Runtime.ReferenceRuntime"/>); the engine
-    /// only validates the published value and writes it into the
-    /// canonical runtime values container, and mirrors the source's
-    /// trailing-stop position bias into
-    /// <see cref="Core.EngineValues.Reference"/> for downstream use.
+    /// only validates the published value, writes it into the canonical
+    /// runtime values container, and mirrors the source's source-defined
+    /// signed regime state into <see cref="Core.EngineValues.Reference"/>
+    /// for downstream use (e.g. generic reversal detection).
     /// </summary>
     public sealed class ReferenceEngine : EngineBase
     {
@@ -61,11 +61,11 @@ namespace ResearchFeatureEngine.Engines
 
             Context.Values.Reference.Price = price;
 
-            // Surface the source's trailing-stop position bias as a
-            // first-class published value so downstream stages can
-            // consume it without coupling to the reference source.
-            Context.Values.Reference.TrendPosition =
-                _referenceSource.Runtime.Position;
+            // Surface the source's source-defined signed regime state
+            // as a first-class published value so downstream stages
+            // (e.g. Reversal) can consume it without coupling to the
+            // concrete reference source or its runtime fields.
+            Context.Values.Reference.Regime = _referenceSource.Regime;
         }
 
         /// <inheritdoc />

@@ -31,7 +31,8 @@ namespace ResearchFeatureEngine.Indicators
     /// Pipeline:
     ///   cTrader Bars
     ///     → CTraderMarketData
-    ///     → ATRSmoothReferenceSource
+    ///     → selected reference source (ATRSmooth2 or DarvasBox,
+    ///       via ReferenceSourceFactory — exactly one is constructed)
     ///     → ReferenceEngine → DistanceEngine → ScaleEngine →
     ///       NormalizationEngine → StatisticsEngine
     ///     → EngineValues
@@ -47,15 +48,37 @@ namespace ResearchFeatureEngine.Indicators
         // Parameters
         // ---------------------------------------------------------
 
-        [Parameter("ATR Period", Group = "Reference", DefaultValue = 16)]
+        // The selected reference model. Exactly one source is
+        // constructed in Initialize() (see ReferenceSourceFactory);
+        // the non-selected group's parameters are inert — never
+        // read, never validated. cTrader displays all parameter
+        // groups simultaneously; that is expected.
+        [Parameter("Reference Type", Group = "Reference",
+            DefaultValue = ReferenceType.ATRSmooth2)]
+        public ReferenceType ReferenceType { get; set; }
+
+        // ATRSmooth2 parameters. Only read when the selected
+        // reference type is ATRSmooth2.
+        [Parameter("ATR Period", Group = "Reference: ATRSmooth2", DefaultValue = 16,
+            MinValue = 1)]
         public int AtrPeriod { get; set; }
 
-        [Parameter("ATR Multiplier", Group = "Reference", DefaultValue = 5.1)]
+        [Parameter("ATR Multiplier", Group = "Reference: ATRSmooth2", DefaultValue = 5.1)]
         public double AtrMultiplier { get; set; }
 
-        [Parameter("VWMA Smooth Length", Group = "Reference",
+        [Parameter("VWMA Smooth Length", Group = "Reference: ATRSmooth2",
             DefaultValue = 100, MinValue = 1)]
         public int SmoothLength { get; set; }
+
+        // Darvas Box parameters. Only read when the selected
+        // reference type is DarvasBox.
+        [Parameter("Box Length", Group = "Reference: Darvas Box", DefaultValue = 5,
+            MinValue = 3)]
+        public int DarvasLength { get; set; }
+
+        [Parameter("Mean Darvas Window", Group = "Research Features",
+            DefaultValue = 20, MinValue = 1)]
+        public int MeanDarvasWindowSize { get; set; }
 
         [Parameter("Scale ATR Period", Group = "Scale", DefaultValue = 14,
             MinValue = 1)]
@@ -114,10 +137,42 @@ namespace ResearchFeatureEngine.Indicators
         public IndicatorDataSeries ReversalBarSeries { get; set; }
 
         // ---------------------------------------------------------
+        // Darvas Box specific outputs
+        // ---------------------------------------------------------
+        // These are ONLY populated when ReferenceType == DarvasBox.
+        // For ATRSmooth2 they remain NaN (gap in Data Window).
+
+        [Output("Darvas Upper", LineColor = "DodgerBlue", Thickness = 1)]
+        public IndicatorDataSeries DarvasUpperSeries { get; set; }
+
+        [Output("Darvas Lower", LineColor = "DodgerBlue", Thickness = 1)]
+        public IndicatorDataSeries DarvasLowerSeries { get; set; }
+
+        [Output("Darvas Midpoint", LineColor = "Orange", Thickness = 1)]
+        public IndicatorDataSeries DarvasMidpointSeries { get; set; }
+
+        [Output("Signed Closing Distance (Close - Box Outer)",
+            LineColor = "Gray", Thickness = 1, IsVisible = false)]
+        public IndicatorDataSeries SignedClosingDistanceSeries { get; set; }
+
+        [Output("Absolute Closing Distance (|Signed|)",
+            LineColor = "Gray", Thickness = 1, IsVisible = false)]
+        public IndicatorDataSeries AbsoluteClosingDistanceSeries { get; set; }
+
+        // ---------------------------------------------------------
+        // Mean Darvas Closing Distance outputs
+        // ---------------------------------------------------------
+        // Only populated when ReferenceType == DarvasBox.
+
+        [Output("Mean Darvas Signed Distance", LineColor = "Purple", Thickness = 1)]
+        public IndicatorDataSeries MeanDarvasSignedDistanceSeries { get; set; }
+
+        // ---------------------------------------------------------
         // Engine state
         // ---------------------------------------------------------
 
         private ResearchFeatureEngine _engine;
+        private DarvasBoxReferenceSource? _darvasSource;
         private EngineValues _values;
         private IMarketData _marketData;
         private int _lastProcessedIndex;
@@ -130,11 +185,24 @@ namespace ResearchFeatureEngine.Indicators
         {
             _marketData = new CTraderMarketData(Bars);
 
-            var referenceSource = new ATRSmoothReferenceSource(
-                new ATRSmoothConfiguration(
-                    atrPeriod: AtrPeriod,
-                    atrMultiplier: AtrMultiplier,
-                    smoothLength: SmoothLength));
+            // Exclusive construction: exactly ONE reference source is
+            // built from the selected ReferenceType. The non-selected
+            // model's parameters are never read or validated.
+            var referenceSource = ReferenceSourceFactory.Create(
+                ReferenceType,
+                ReferenceType == Core.ReferenceType.ATRSmooth2
+                    ? new ATRSmoothConfiguration(
+                        atrPeriod: AtrPeriod,
+                        atrMultiplier: AtrMultiplier,
+                        smoothLength: SmoothLength)
+                    : null,
+                ReferenceType == Core.ReferenceType.DarvasBox
+                    ? new DarvasBoxConfiguration(DarvasLength)
+                    : null);
+
+            // Typed view for Darvas read-only diagnostics (Upper/Lower/HasBox).
+            // No math is performed here; only surfacing the production source's state.
+            _darvasSource = referenceSource as DarvasBoxReferenceSource;
 
             var statisticModels = new System.Collections.Generic.List<IStatisticModel>
             {
@@ -153,6 +221,7 @@ namespace ResearchFeatureEngine.Indicators
             var options = new EngineOptions
             {
                 StatisticsWindowSize = StatisticsWindowSize,
+                MeanDarvasWindowSize = MeanDarvasWindowSize,
                 ReversalMode = ReversalMode
             };
 
@@ -234,15 +303,15 @@ namespace ResearchFeatureEngine.Indicators
 
         private void Publish(int index)
         {
-            ReferenceSeries[index]     = _values.Reference.Price;
-            DirectionalSeries[index]   = _values.Distance.DirectionalExtension;
-            AbsoluteSeries[index]      = _values.Distance.AbsoluteExtension;
-            ScaleSeries[index]         = _values.Scale.Scale;
-            NormalizedSeries[index]    = _values.Normalization.NormalizedMeasurement;
-            MeanSeries[index]          = _values.Statistics.Location.Mean;
-            StdDevSeries[index]        = _values.Statistics.Dispersion.StandardDeviation;
-            SkewnessSeries[index]      = _values.Statistics.Shape.Skewness;
-            KurtosisSeries[index]      = _values.Statistics.Shape.Kurtosis;
+            ReferenceSeries[index] = _values.Reference.Price;
+            DirectionalSeries[index] = _values.Distance.DirectionalExtension;
+            AbsoluteSeries[index] = _values.Distance.AbsoluteExtension;
+            ScaleSeries[index] = _values.Scale.Scale;
+            NormalizedSeries[index] = _values.Normalization.NormalizedMeasurement;
+            MeanSeries[index] = _values.Statistics.Location.Mean;
+            StdDevSeries[index] = _values.Statistics.Dispersion.StandardDeviation;
+            SkewnessSeries[index] = _values.Statistics.Shape.Skewness;
+            KurtosisSeries[index] = _values.Statistics.Shape.Kurtosis;
 
             // Reversal stage. BarsSinceReversal is null until the
             // first reversal; plot NaN (gap) in that case.
@@ -264,6 +333,29 @@ namespace ResearchFeatureEngine.Indicators
                 _values.Reversal.Direction == Core.ReversalDirection.None
                     ? double.NaN
                     : (_values.Reversal.IsReversalBar ? 1.0 : 0.0);
+
+            // Darvas Box specific outputs (only when ReferenceType == DarvasBox).
+            // NaN during warm-up (no box confirmed yet) or when using ATRSmooth2.
+            if (_darvasSource != null && _darvasSource.HasBox)
+            {
+                DarvasUpperSeries[index] = _darvasSource.Upper;
+                DarvasLowerSeries[index] = _darvasSource.Lower;
+                DarvasMidpointSeries[index] = _values.Reference.Price;
+                SignedClosingDistanceSeries[index] = _values.DarvasBoxDistance.SignedClosingDistance;
+                AbsoluteClosingDistanceSeries[index] = _values.DarvasBoxDistance.AbsoluteClosingDistance;
+
+                // Mean Darvas Closing Distance
+                MeanDarvasSignedDistanceSeries[index] = _values.MeanDarvasClosingDistance.MeanSignedDistance;
+            }
+            else
+            {
+                DarvasUpperSeries[index] = double.NaN;
+                DarvasLowerSeries[index] = double.NaN;
+                DarvasMidpointSeries[index] = double.NaN;
+                SignedClosingDistanceSeries[index] = double.NaN;
+                AbsoluteClosingDistanceSeries[index] = double.NaN;
+                MeanDarvasSignedDistanceSeries[index] = double.NaN;
+            }
         }
     }
 }

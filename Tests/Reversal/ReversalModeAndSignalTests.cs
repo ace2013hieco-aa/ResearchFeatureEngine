@@ -36,9 +36,9 @@ namespace ResearchFeatureEngine.Tests.Reversal
 
         private static void ProcessPosition(
             ReversalEngine engine, EngineContext context, EngineValues values,
-            int index, double trendPosition)
+            int index, double regime)
         {
-            values.Reference.TrendPosition = trendPosition;
+            values.Reference.Regime = regime;
             context.SetIndex(index);
             engine.Update();
         }
@@ -151,7 +151,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
         public void PositionMode_NaNPosition_Throws()
         {
             var (engine, context, values) = Create(ReversalMode.TrailingStopPosition);
-            values.Reference.TrendPosition = double.NaN;
+            values.Reference.Regime = double.NaN;
             context.SetIndex(0);
             Assert.Throws<System.InvalidOperationException>(
                 () => engine.Update());
@@ -204,7 +204,7 @@ namespace ResearchFeatureEngine.Tests.Reversal
 
             for (int i = 0; i < 5; i++)
             {
-                values.Reference.TrendPosition = -1.0;
+                values.Reference.Regime = -1.0;
                 context.SetIndex(1);
                 engine.Update();
                 Assert.Equal(0, values.Reversal.BarsSinceReversal);

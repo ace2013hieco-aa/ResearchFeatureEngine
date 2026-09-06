@@ -14,11 +14,12 @@ The core engine has **no cTrader dependencies** — cTrader lives only in the ad
 ```
 Market Data
     ↓
-Reference      ← ATR-smoothed equilibrium (ATRSmoothReferenceSource)
+Reference      ← selected reference source (ATRSmooth2 equilibrium level
+                 or Darvas Box midpoint — one active model per engine)
     ↓
 Distance       ← close vs reference (directional + absolute)
     ↓
-Reversal       ← ATR Smooth regime-flip state machine (v1.1)
+Reversal       ← strict regime-transition state machine (v1.1)
     ↓
 Scale          ← characteristic scale (ATR)
     ↓
@@ -53,10 +54,10 @@ Selectable via `EngineOptions.ReversalMode` / the cTrader **Reversal Mode** para
 
 | Mode | Relation | Reversal |
 | --- | --- | --- |
-| `TrailingStopPosition` (default) | sign of the ATR trailing-stop bias (`Reference.TrendPosition`); `> 0` (long) is ABOVE, `<= 0` (short/flat) is BELOW | strict sign change — reproduces the original `AtrTrailingStopSmoothed` `pos` flips. **Canonical semantic: a reversal is an ATR Smooth REGIME FLIP, not a candle crossing the line.** |
+| `TrailingStopPosition` (default) | source-declared signed regime (`Reference.Regime`) | strict state transition — increase (0 → +1, -1 → 0, -1 → +1) is Up, decrease (+1 → 0, 0 → -1, +1 → -1) is Down, equal states never. For ATRSmooth2 the regime is the trailing-stop position bias — **the canonical semantic: a reversal is an ATR Smooth REGIME FLIP, not a candle crossing the line.** For Darvas Box the regime is the positional state (+1 above upper / 0 inside / -1 below lower); transitions include breakout and return-to-box events. |
 | `CloseToReference` (explicit opt-in) | sign of `close − reference`; `>= reference` is ABOVE, `<` is BELOW | strict side change |
 
-**Verified bar-for-bar** against an independent reimplementation of the original `AtrTrailingStopSmoothed` `pos` series on 10 000 real EURUSD M1 bars — `TrendPosition` equals `pos` and every reversal bar/direction matches.
+**Verified bar-for-bar** against an independent reimplementation of the original `AtrTrailingStopSmoothed` `pos` series on 10 000 real EURUSD M1 bars — `Regime` equals `pos` and every reversal bar/direction matches.
 
 No lookahead (only current + previous bar); live re-tick idempotent via state snapshotting. See [`Reversal/Reversal.md`](Reversal/Reversal.md) for full semantics, equality behavior, and initialization.
 
@@ -99,14 +100,27 @@ The indicator (`Indicators/ResearchFeatureEngineIndicator/`) is a **thin adapter
 
 | Parameter | Group | Default |
 | --- | --- | --- |
-| ATR Period | Reference | 16 |
-| ATR Multiplier | Reference | 5.1 |
-| VWMA Smooth Length | Reference | 100 |
+| **Reference Type** | Reference | `ATRSmooth2` (v1.2; selects the single active reference model) |
+| ATR Period | Reference: ATRSmooth2 | 16 |
+| ATR Multiplier | Reference: ATRSmooth2 | 5.1 |
+| VWMA Smooth Length | Reference: ATRSmooth2 | 100 |
+| **Box Length** | Reference: Darvas Box | 5 (v1.2; min 3) |
 | Scale ATR Period | Scale | 14 |
 | Statistics Window | Statistics | 252 |
-| **Reversal Mode** | Reversal | `TrailingStopPosition` (v1.1; regime-flip semantic) |
+| **Reversal Mode** | Reversal | `TrailingStopPosition` (v1.1; regime-transition semantic) |
 
 The indicator renders in a dedicated sub-pane (`IsOverlay = false`), so it does not obscure the price chart.
+
+### Reference models (v1.2)
+
+Exactly ONE reference model is active per engine instance, selected by the **Reference Type** parameter and constructed exclusively at initialization (`ReferenceSourceFactory` — the non-selected model is never instantiated and its parameters are inert):
+
+| Type | Reference.Price | Reference.Regime | Reversal |
+| --- | --- | --- | --- |
+| `ATRSmooth2` | `(VWMA(close, smoothLength) + ATRTrailingStop) / 2` | trailing-stop position bias: +1 bullish / -1 bearish / 0 initial | strict transition of the regime — a trailing-stop flip. **Crossing the ATRSmooth published reference line is not itself an ATRSmooth reversal.** |
+| `DarvasBox` | `(Upper + Lower) / 2` of the current box | positional state: +1 close above Upper / 0 inside (real persistent state) / -1 close below Lower | strict transitions of the positional regime — includes breakout and return-to-box transitions. The box midpoint jumps on box replacement; that structural effect is intentional and is never smoothed. |
+
+`Reference.Price` is the source-defined scalar measurement level against which Distance measures signed price deviation — it is not universally an "equilibrium price" (the Darvas box midpoint is a measurement level, not an equilibrium).
 
 ---
 
@@ -139,15 +153,17 @@ Both .NET SDK 6 and 10 are supported (6 for the engine/indicator, 10 for the tes
 
 ```
 Core/                EngineContext, EngineBase, EngineValues, StatisticType,
-                     ReversalDirection, ReversalMode
+                     ReversalDirection, ReversalMode, ReferenceType
 Reference/           IReferenceSource, ATRSmoothReferenceSource,
-                     ReferenceRuntime, configuration, validation
+                     DarvasBoxReferenceSource, ReferenceRuntime,
+                     configuration, validation
 Engines/             ReferenceEngine, DistanceEngine, validators
 Reversal/            ReversalEngine, ReversalRuntimeValues, validator, docs (v1.1)
 Scale/               ScaleEngine, ATRScaleModel
 Normalization/       NormalizationEngine, ScaleNormalizationModel
 Statistics/          StatisticsEngine, StatisticsWindow, models, publisher
-Composition/         ResearchFeatureEngine, builder, configuration, options
+Composition/         ResearchFeatureEngine, builder, configuration, options,
+                     ReferenceSourceFactory (exclusive selection)
 Adapters/            CTraderMarketData, CTraderPriceSeries (cTrader only)
 Indicators/          ResearchFeatureEngineIndicator (cTrader only)
 ATRsmooth2/          Original AtrTrailingStopSmoothed reference indicator
