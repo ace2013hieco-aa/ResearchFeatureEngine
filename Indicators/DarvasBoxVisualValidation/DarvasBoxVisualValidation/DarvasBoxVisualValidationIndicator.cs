@@ -214,11 +214,15 @@ namespace ResearchFeatureEngine.Indicators
             // selection, exactly as the production indicator does
             // for ReferenceType.DarvasBox. The production
             // DarvasBoxConfiguration enforces the structural
-            // validation rules (length >= 3).
+            // validation rules (length >= 3). The ATRSmooth and HMA
+            // configurations are inert for a DarvasBox selection
+            // (never read, never validated) and are passed as null,
+            // matching the canonical 4-argument factory API.
             IReferenceSource source = ReferenceSourceFactory.Create(
                 Core.ReferenceType.DarvasBox,
                 atrSmoothConfiguration: null,
-                darvasBoxConfiguration: new DarvasBoxConfiguration(BoxLength));
+                darvasBoxConfiguration: new DarvasBoxConfiguration(BoxLength),
+                hmaConfiguration: null);
 
             // Typed view for read-only diagnostics (Upper/Lower/
             // HasBox). No math is performed here.
