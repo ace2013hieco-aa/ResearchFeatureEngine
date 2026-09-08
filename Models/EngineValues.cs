@@ -21,6 +21,7 @@ namespace ResearchFeatureEngine.Core
             Normalization = new NormalizationRuntimeValues();
             Statistics = new StatisticsRuntimeValues();
             Reversal = new ReversalRuntimeValues();
+            AtrSmoothRegimeSegment = new AtrSmoothRegimeSegmentRuntimeValues();
         }
 
         #region Reference
@@ -115,6 +116,20 @@ namespace ResearchFeatureEngine.Core
         /// Gets the reversal runtime values.
         /// </summary>
         public ReversalRuntimeValues Reversal { get; }
+
+        #endregion
+
+        #region ATRSmooth Regime Segment
+
+        /// <summary>
+        /// Gets the ATRSmooth regime segment runtime values (M9):
+        /// canonical regime direction plus segment metadata —
+        /// RegimeId, RegimeStartIndex, zero-based RegimeAge, and
+        /// RegimeTransition. Published only by the ATRSmooth-based
+        /// reference compositions; the values remain at their
+        /// unavailable defaults in every other mode.
+        /// </summary>
+        public AtrSmoothRegimeSegmentRuntimeValues AtrSmoothRegimeSegment { get; }
 
         #endregion
     }

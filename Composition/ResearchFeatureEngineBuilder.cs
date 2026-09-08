@@ -115,6 +115,25 @@ namespace ResearchFeatureEngine.Composition
                         compositeSource.AtrSmoothSource));
             }
 
+            // M9 ATRSmooth regime segment foundation: registered
+            // ONLY for the ATRSmooth-based compositions — the
+            // ATRSmooth2 single reference or the HMA + ATRSmooth
+            // composite (whose published regime IS the canonical
+            // ATRSmooth trailing-stop regime, HmaAtrSmoothCompositeSource
+            // .Regime => AtrSmoothSource.Regime). The stage consumes
+            // the canonical published regime only; every other
+            // reference mode (DarvasBox / Hma alone) never
+            // constructs it and keeps its exact previous behavior,
+            // with the segment values left at their unavailable
+            // defaults.
+            if (_configuration.ReferenceSource
+                    is Reference.Sources.ATRSmoothReferenceSource
+                || _configuration.ReferenceSource
+                    is Reference.Sources.HmaAtrSmoothCompositeSource)
+            {
+                builder.Add(new AtrSmoothRegimeSegmentEngine(context));
+            }
+
             builder.Add(
                 new ReversalEngine(context, _configuration.Options.ReversalMode));
 

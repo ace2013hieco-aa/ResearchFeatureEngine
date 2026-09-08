@@ -19,6 +19,8 @@ Reference      ← selected reference source (ATRSmooth2 equilibrium level
     ↓
 Distance       ← close vs reference (directional + absolute)
     ↓
+Regime Segment ← ATRSmooth regime segment metadata (M9; ATRSmooth-based modes)
+    ↓
 Reversal       ← strict regime-transition state machine (v1.1)
     ↓
 Scale          ← characteristic scale (ATR)
@@ -138,6 +140,22 @@ Both stages consume the canonical producer runtimes directly — no duplicate in
 
 ---
 
+### ATRSmooth Regime Segment foundation (M9)
+
+A new `AtrSmoothRegimeSegmentEngine` pipeline stage (after Reference, before Reversal) layers **bounded temporal-segment metadata** on the canonical ATRSmooth regime — the trailing-stop position bias (`Reference.Regime`) — and publishes into `EngineValues.AtrSmoothRegimeSegment`:
+
+| Output | Type | Description |
+| --- | --- | --- |
+| `Regime` | `AtrSmoothRegimeDirection` | `Bullish` / `Bearish` / `Unavailable` (warm-up). |
+| `RegimeId` | `int?` | Monotonic segment ID: first established regime = 0, every flip +1, shared by all bars of a segment. `null` during warm-up. |
+| `RegimeStartIndex` | `int?` | First bar of the current segment; changes exactly on a flip. `null` during warm-up. |
+| `RegimeAge` | `int?` | **Zero-based** bars since the segment began (`t − start`; first bar = 0). `null` during warm-up. |
+| `RegimeTransition` | `AtrSmoothRegimeTransition` | `Up` (+1) bearish→bullish flip, `Down` (−1) bullish→bearish flip, `None` (0) otherwise. The flip itself — never a price crossing of the ATRSmooth line. |
+
+The stage is a pure consumer of the canonical published regime (no second ATRSmooth calculation, no second reversal definition). It is registered only for the ATRSmooth-based compositions (`ATRSmooth2`, `HmaAtrSmooth`); every other mode leaves the values at their unavailable defaults. True O(1) per bar; re-tick idempotent and reset/replay deterministic (snapshot/restore, same pattern as the Reversal stage). Pinned by a hand-computed 13-bar golden oracle, adversarial price-crossing fixtures (10 000 real EURUSD M1 bars), and executable invariant tests. See [`Engines/AtrSmoothRegimeSegment.md`](Engines/AtrSmoothRegimeSegment.md) for the full semantics, the worked example, and the warm-up/reset/re-tick contracts.
+
+---
+
 ## Build & test
 
 ```bash
@@ -155,7 +173,7 @@ Both .NET SDK 6 and 10 are supported (6 for the engine/indicator, 10 for the tes
 
 ## <a name="testing"></a>Testing
 
-- **Full suite: 214/214 passing.**
+- **Full suite: 427/427 passing.**
 - Mathematical correctness, determinism, long-run stability (100k bars), performance benchmarks, real-market-data validation (10k EURUSD M1 bars), and cross-platform consistency.
 - 28 reversal-specific tests: all 7 required cases, equality boundary, multiple alternating reversals, re-tick idempotency, lookahead, both modes, the step signal, and the real-data comparison against the original indicator.
 - 32 skewness/kurtosis tests: independent golden references (Python two-pass computation), symmetric/asymmetric/heavy-tailed samples, the excess-kurtosis convention, minimum-n and zero-variance publication semantics, numerical stability at a 1e6 baseline, outlier sensitivity, all three sources, live-tick, fresh-pass, discontinuity recovery, and bit-for-bit determinism.
