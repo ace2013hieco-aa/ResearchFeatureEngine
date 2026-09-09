@@ -28,6 +28,13 @@
     <ProjectReference Include="..\ResearchFeatureEngine.csproj" />
   </ItemGroup>
 
+  <!-- M10.1: BulkExport tool sources compile into the test assembly
+       (InternalsVisibleTo from the tool project is for the built
+       exe; tests exercise the runner directly here). -->
+  <ItemGroup>
+    <Compile Include="..\tools\BulkExport\**\*.cs" Exclude="..\tools\BulkExport\obj\**\*.cs;..\tools\BulkExport\Program.cs" LinkBase="BulkExport" />
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="TestData\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
