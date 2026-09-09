@@ -44,7 +44,8 @@ namespace ResearchFeatureEngine.BulkExport
                 {
                     throw new ExportException(
                         "Unrecognized capture header (expected recorder_v1 "
-                        + $"'{SourceSchema.RecorderHeader}' or fixture_v1 "
+                        + $"'{SourceSchema.RecorderHeader}', recorder_v1_1 "
+                        + $"'{SourceSchema.RecorderV1_1Header}', or fixture_v1 "
                         + $"'{SourceSchema.FixtureHeader}'): {header}");
                 }
 
@@ -184,10 +185,12 @@ namespace ResearchFeatureEngine.BulkExport
             {
                 throw new ExportException(
                     "Unrecognized capture header (expected recorder_v1 "
-                    + $"'{SourceSchema.RecorderHeader}' or fixture_v1 "
+                    + $"'{SourceSchema.RecorderHeader}', recorder_v1_1 "
+                    + $"'{SourceSchema.RecorderV1_1Header}', or fixture_v1 "
                     + $"'{SourceSchema.FixtureHeader}'): {header}");
             }
 
+            int fieldCount = SourceSchema.FieldCount(kind.Value);
             long rowNumber = 1; // data row ordinal for diagnostics
             string? line = reader.ReadLine();
             while (line is not null)
@@ -200,10 +203,10 @@ namespace ResearchFeatureEngine.BulkExport
 
                 string[] tokens = line.Split(',');
 
-                if (tokens.Length != 6)
+                if (tokens.Length != fieldCount)
                 {
                     throw new ExportException(
-                        $"Expected 6 comma-separated fields, got {tokens.Length} "
+                        $"Expected {fieldCount} comma-separated fields, got {tokens.Length} "
                         + $"at data row {rowNumber}: {_path}");
                 }
 
@@ -255,8 +258,33 @@ namespace ResearchFeatureEngine.BulkExport
                 catch (FormatException)
                 {
                     throw new ExportException(
-                        $"Unparseable numeric field at data row {rowNumber}: "
-                        + $"{_path}");
+                        $"Unparseable numeric field at data row {rowNumber}: " +
+                        $"{_path}");
+                }
+
+                // recorder_v1_1 Spread: the recorder contract (BarRecord.cs
+                // IsSpreadValid, commit 2795dd0) is finite and >= 0; zero is
+                // VALID (spread unavailable — historical backfill; never
+                // fabricated). Anything else fails closed: the source record
+                // itself is malformed. Spread is provenance only; it never
+                // reaches the engine (which consumes OHLCV only) and never
+                // enters the measurement artifact.
+                double spread = 0;
+                if (kind.Value == SourceSchemaKind.RecorderV1_1)
+                {
+                    if (!double.TryParse(
+                            tokens[6],
+                            NumberStyles.Float,
+                            CultureInfo.InvariantCulture,
+                            out spread)
+                        || double.IsNaN(spread)
+                        || double.IsInfinity(spread)
+                        || spread < 0)
+                    {
+                        throw new ExportException(
+                            $"Invalid Spread field '{tokens[6]}' at data row " +
+                            $"{rowNumber} (recorder_v1_1 requires finite non-negative): {_path}");
+                    }
                 }
 
                 yield return new ParsedBar

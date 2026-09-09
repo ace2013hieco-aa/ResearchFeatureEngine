@@ -4,6 +4,7 @@
     "dataset_version": "v1",
     "filename": "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick50_All.csv",
     "source_sha256": "8712b7207529e60b4b42bfbdcd7b36467046e2ee127c95dfc0c40d6920e6f3e6",
+    "source_schema": "recorder_v1_1",
     "first_timestamp": "2013-07-24T06:00:59.2240000Z",
     "last_timestamp": "2026-09-07T11:33:20.1590000Z",
     "partition_policy": "first_calendar_year_only"
@@ -13,6 +14,7 @@
     "dataset_version": "v1",
     "filename": "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\EURUSD_Tick100_All (10).csv",
     "source_sha256": "d7afb8039c2a6370cb969d7e722414aa3e1d973cd33266dbf706b2125decc9d9",
+    "source_schema": "recorder_v1_1",
     "first_timestamp": "2013-07-23T04:11:00.2900000Z",
     "last_timestamp": "2026-09-07T08:55:27.3800000Z",
     "partition_policy": "first_calendar_year_only"

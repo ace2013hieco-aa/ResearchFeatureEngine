@@ -127,6 +127,63 @@ namespace ResearchFeatureEngine.Tests.BulkExport
             return sb.ToString();
         }
 
+        /// <summary>
+        /// recorder_v1_1 synthetic capture (M10.1.x): the exact same
+        /// deterministic walk as WriteSyntheticCapture — identical
+        /// Random(seed) consumption and identical OHLCV formatting —
+        /// plus a trailing Spread column. spreadOf must NOT consume
+        /// randomness so the OHLCV stream stays identical to the
+        /// 6-column writer at the same seed.
+        /// </summary>
+        private static string WriteSyntheticCaptureV11(
+            string dir,
+            string name,
+            int bars,
+            DateTime startUtc,
+            int stepMinutes,
+            int seed,
+            Func<int, string> spreadOf)
+        {
+            string path = Path.Combine(dir, name);
+            var sb = new StringBuilder(bars * 72);
+            sb.Append("OpenTimeUtc,Open,High,Low,Close,TickVolume,Spread\n");
+
+            var rng = new Random(seed);
+            double price = 1.1000;
+            var t = startUtc;
+
+            for (int i = 0; i < bars; i++)
+            {
+                double move = (rng.NextDouble() - 0.5) * 0.004;
+                double open = price;
+                double close = price + move;
+                double high = Math.Max(open, close) + rng.NextDouble() * 0.001;
+                double low = Math.Min(open, close) - rng.NextDouble() * 0.001;
+                long volume = rng.Next(10, 500);
+
+                sb.Append(t.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"))
+                  .Append(',')
+                  .Append(open.ToString("F6", CultureInfo.InvariantCulture))
+                  .Append(',')
+                  .Append(high.ToString("F6", CultureInfo.InvariantCulture))
+                  .Append(',')
+                  .Append(low.ToString("F6", CultureInfo.InvariantCulture))
+                  .Append(',')
+                  .Append(close.ToString("F6", CultureInfo.InvariantCulture))
+                  .Append(',')
+                  .Append(volume.ToString(CultureInfo.InvariantCulture))
+                  .Append(',')
+                  .Append(spreadOf(i))
+                  .Append('\n');
+
+                price = close;
+                t = t.AddMinutes(stepMinutes);
+            }
+
+            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
+            return path;
+        }
+
         private static DatasetRegistryEntry EntryFor(
             string capturePath,
             string datasetId,
@@ -1463,6 +1520,362 @@ namespace ResearchFeatureEngine.Tests.BulkExport
             {
                 Directory.Delete(dir, true);
             }
+        }
+
+        // -------------------------------------------------------------
+        // M10.1.x — recorder_v1_1 extraction-boundary suite
+        // (V1.1-1 … V1.1-9). Spread is validated source-field
+        // provenance ONLY: never an engine input, never a measurement
+        // column (Schema.RenderRow reads Tokens[0..5] exclusively).
+        // -------------------------------------------------------------
+
+        private static string SpreadZero(int i) => "0";
+
+        [Fact]
+        public void V11_1_ValidRecorderV11_Accepted()
+        {
+            string dir = TempDir();
+            try
+            {
+                // 200 hourly bars ≈ 8.3 days — all inside year 1.
+                string capture = WriteSyntheticCaptureV11(
+                    dir, "v11.csv", 200,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 211, SpreadZero);
+
+                (string artifact, string manifestPath) = RunExport(
+                    capture, "V11A", ExportMode.ATRSmooth2, dir);
+
+                (string[] header, List<string[]> rows) = ReadArtifact(artifact);
+                Assert.Equal(Schema.Columns(ExportMode.ATRSmooth2), header);
+                Assert.Equal(200, rows.Count);
+
+                // Engine equality on the V1.1 capture — the same oracle
+                // path proves the parse fed the engine identically.
+                List<EngineValues> oracle = RunOracle(capture, 200, ExportMode.ATRSmooth2);
+                for (int i = 0; i < 200; i++)
+                {
+                    AssertBarEqualsEngine(rows[i], header, oracle[i], i);
+                }
+
+                // Manifest records the V1.1 source schema
+                string manifest = File.ReadAllText(manifestPath);
+                Assert.Contains("\"source_schema\": \"recorder_v1_1\"", manifest);
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_2_ValidSpreadValues_Accepted()
+        {
+            string dir = TempDir();
+            try
+            {
+                // Realistic spreads: positive fractionals and the
+                // recorder's valid zero (backfill-unavailable).
+                string capture = WriteSyntheticCaptureV11(
+                    dir, "v11spread.csv", 60,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 223,
+                    i => (i % 3) switch
+                    {
+                        0 => "0",
+                        1 => "0.00012",
+                        _ => "0.00035"
+                    });
+
+                (string artifact, _) = RunExport(capture, "V11B", ExportMode.ATRSmooth2, dir);
+                (_, List<string[]> rows) = ReadArtifact(artifact);
+                Assert.Equal(60, rows.Count);
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_3_MalformedSpread_FailsClosed()
+        {
+            string dir = TempDir();
+            try
+            {
+                string capture = WriteSyntheticCaptureV11(
+                    dir, "v11bad.csv", 30,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 227,
+                    i => i == 7 ? "not-a-number" : "0");
+
+                var entry = EntryFor(capture, "V11C", "", "");
+                var runner = ExportRunner.Create(
+                    Registry(entry),
+                    "unused",
+                    "V11C",
+                    "atrsmooth2",
+                    Path.Combine(dir, "v11bad-out.csv"),
+                    capture,
+                    "0123456789abcdef0123456789abcdef01234567");
+
+                Assert.Throws<ExportException>(() => runner.Run());
+                Assert.False(File.Exists(Path.Combine(dir, "v11bad-out.csv")));
+                Assert.False(File.Exists(Path.Combine(dir, "v11bad-out.csv.partial")));
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_4_NegativeSpread_FailsClosed()
+        {
+            string dir = TempDir();
+            try
+            {
+                // Negative spread violates the recorder contract
+                // (finite, non-negative) even though it parses as a
+                // number — the fail must be semantic, not just syntactic.
+                string capture = WriteSyntheticCaptureV11(
+                    dir, "v11neg.csv", 30,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 229,
+                    i => i == 4 ? "-0.0001" : "0");
+
+                var entry = EntryFor(capture, "V11D", "", "");
+                var runner = ExportRunner.Create(
+                    Registry(entry),
+                    "unused",
+                    "V11D",
+                    "atrsmooth2",
+                    Path.Combine(dir, "v11neg-out.csv"),
+                    capture,
+                    "0123456789abcdef0123456789abcdef01234567");
+
+                Assert.Throws<ExportException>(() => runner.Run());
+                Assert.False(File.Exists(Path.Combine(dir, "v11neg-out.csv")));
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_5_SixColumnDeclaredV11_FailsClosed()
+        {
+            string dir = TempDir();
+            try
+            {
+                // A 6-column capture with a registry declaring
+                // recorder_v1_1: the schema pin fails closed.
+                string capture6 = WriteSyntheticCapture(
+                    dir, "v6.csv", 30,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc), 60, 233);
+
+                var entry = EntryFor(capture6, "V11E", "", "");
+                entry.SourceSchema = "recorder_v1_1";
+                var runner = ExportRunner.Create(
+                    Registry(entry),
+                    "unused",
+                    "V11E",
+                    "atrsmooth2",
+                    Path.Combine(dir, "v6decl-out.csv"),
+                    capture6,
+                    "0123456789abcdef0123456789abcdef01234567");
+
+                Assert.Throws<ExportException>(() => runner.Run());
+                Assert.False(File.Exists(Path.Combine(dir, "v6decl-out.csv")));
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_6_SevenColumnDeclaredV1_FailsClosed()
+        {
+            string dir = TempDir();
+            try
+            {
+                // The inverse pin: a 7-column capture declared as
+                // recorder_v1 fails closed.
+                string capture7 = WriteSyntheticCaptureV11(
+                    dir, "v7.csv", 30,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 239, SpreadZero);
+
+                var entry = EntryFor(capture7, "V11F", "", "");
+                entry.SourceSchema = "recorder_v1";
+                var runner = ExportRunner.Create(
+                    Registry(entry),
+                    "unused",
+                    "V11F",
+                    "atrsmooth2",
+                    Path.Combine(dir, "v7decl-out.csv"),
+                    capture7,
+                    "0123456789abcdef0123456789abcdef01234567");
+
+                Assert.Throws<ExportException>(() => runner.Run());
+                Assert.False(File.Exists(Path.Combine(dir, "v7decl-out.csv")));
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_7_EightColumns_FailsClosed()
+        {
+            string dir = TempDir();
+            try
+            {
+                // Extra field beyond the declared header — rejected at
+                // the field-count gate.
+                string capture = WriteSyntheticCaptureV11(
+                    dir, "v8.csv", 30,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 241, SpreadZero);
+                string[] lines = File.ReadAllLines(capture);
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    lines[i] = lines[i] + ",EXTRA";
+                }
+                File.WriteAllLines(capture, lines, new UTF8Encoding(false));
+
+                var entry = EntryFor(capture, "V11G", "", "");
+                var runner = ExportRunner.Create(
+                    Registry(entry),
+                    "unused",
+                    "V11G",
+                    "atrsmooth2",
+                    Path.Combine(dir, "v8-out.csv"),
+                    capture,
+                    "0123456789abcdef0123456789abcdef01234567");
+
+                Assert.Throws<ExportException>(() => runner.Run());
+                Assert.False(File.Exists(Path.Combine(dir, "v8-out.csv")));
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_8_WrongFieldOrder_FailsClosed()
+        {
+            string dir = TempDir();
+            try
+            {
+                // Reordered header: OpenTimeUtc,Open,High,Low,Close,
+                // Spread,TickVolume — same set of names, wrong order.
+                // Exact-header detection rejects it.
+                string capture = WriteSyntheticCaptureV11(
+                    dir, "v8order.csv", 30,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 251, SpreadZero);
+                string[] lines = File.ReadAllLines(capture);
+                lines[0] = "OpenTimeUtc,Open,High,Low,Close,Spread,TickVolume";
+                File.WriteAllLines(capture, lines, new UTF8Encoding(false));
+
+                var entry = EntryFor(capture, "V11H", "", "");
+                var runner = ExportRunner.Create(
+                    Registry(entry),
+                    "unused",
+                    "V11H",
+                    "atrsmooth2",
+                    Path.Combine(dir, "v8order-out.csv"),
+                    capture,
+                    "0123456789abcdef0123456789abcdef01234567");
+
+                Assert.Throws<ExportException>(() => runner.Run());
+                Assert.False(File.Exists(Path.Combine(dir, "v8order-out.csv")));
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_9_EngineNeutrality_SpreadNeverContaminatesMeasurements()
+        {
+            string dir = TempDir();
+            try
+            {
+                // THE load-bearing test (M10.1.x §9 V1.1-7): identical
+                // OHLCV, different valid Spread values → byte-identical
+                // measurement artifacts. The 7-column writer consumes
+                // Random(seed) identically to the 6-column writer, and
+                // spreadOf never touches the RNG.
+                string capA = WriteSyntheticCaptureV11(
+                    dir, "neutralA.csv", 300,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 257, SpreadZero);
+                string capB = WriteSyntheticCaptureV11(
+                    dir, "neutralB.csv", 300,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    60, 257,
+                    i => (0.0001 + (i % 7) * 0.00005)
+                        .ToString("F8", CultureInfo.InvariantCulture));
+
+                // Sanity: OHLCV tokens are truly identical
+                string[] a = File.ReadAllLines(capA);
+                string[] b = File.ReadAllLines(capB);
+                Assert.Equal(a.Length, b.Length);
+                for (int i = 1; i < a.Length; i++)
+                {
+                    string oA = a[i].Substring(0, a[i].LastIndexOf(','));
+                    string oB = b[i].Substring(0, b[i].LastIndexOf(','));
+                    Assert.Equal(oA, oB);
+                    Assert.NotEqual(a[i], b[i]); // spreads differ
+                }
+
+                (string artifactA, _) = RunExport(capA, "NEUA", ExportMode.ATRSmooth2, dir);
+                (string artifactB, _) = RunExport(capB, "NEUB", ExportMode.ATRSmooth2, dir);
+
+                Assert.True(
+                    File.ReadAllBytes(artifactA).SequenceEqual(File.ReadAllBytes(artifactB)),
+                    "identical OHLCV with different valid spreads must produce "
+                    + "byte-identical measurement artifacts");
+
+                // Cross-schema: the same OHLCV as a 6-column capture
+                // produces the identical artifact too (modulo nothing —
+                // the artifact carries no source-schema trace beyond
+                // the manifest, which this compares via the CSV only).
+                string cap6 = WriteSyntheticCapture(
+                    dir, "neutral6.csv", 300,
+                    new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc), 60, 257);
+                (string artifact6, _) = RunExport(cap6, "NEU6", ExportMode.ATRSmooth2, dir);
+                Assert.True(
+                    File.ReadAllBytes(artifactA).SequenceEqual(File.ReadAllBytes(artifact6)),
+                    "recorder_v1_1 and recorder_v1 captures with identical OHLCV "
+                    + "must produce byte-identical measurement artifacts");
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void V11_10_DatasetIdentity_ProductionShasUnchanged()
+        {
+            // §9 V1.1-8: the ratified production capture identities are
+            // pinned constants — the remediation must not touch the
+            // captures. (The bytes themselves are outside the repo;
+            // the pinned identity is the registry contract.)
+            Assert.Equal(
+                "8712b7207529e60b4b42bfbdcd7b36467046e2ee127c95dfc0c40d6920e6f3e6",
+                Sha256File("C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick50_All.csv"));
+            Assert.Equal(
+                "d7afb8039c2a6370cb969d7e722414aa3e1d973cd33266dbf706b2125decc9d9",
+                Sha256File("C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\EURUSD_Tick100_All (10).csv"));
         }
     }
 }

@@ -39,6 +39,17 @@ namespace ResearchFeatureEngine.BulkExport
         public string LastTimestamp { get; set; } = "";
 
         /// <summary>
+        /// Declared source schema (M10.1.x §8): one of
+        /// "recorder_v1", "recorder_v1_1", "fixture_v1". Optional —
+        /// absent means the schema is established by exact header
+        /// detection (M10.1 behavior). When declared, it is an exact
+        /// pin: a mismatch with the actual capture header fails
+        /// closed. No wildcard exists.
+        /// </summary>
+        [JsonPropertyName("source_schema")]
+        public string SourceSchema { get; set; } = "";
+
+        /// <summary>
         /// Partition policy; the only supported value is
         /// "first_calendar_year_only". Any other value fails closed.
         /// </summary>
@@ -112,6 +123,16 @@ namespace ResearchFeatureEngine.BulkExport
                 {
                     throw new ExportException(
                         $"Registry entry '{e.DatasetId}' source_sha256 must be 64 lowercase hex chars.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(e.SourceSchema)
+                    && e.SourceSchema != "recorder_v1"
+                    && e.SourceSchema != "recorder_v1_1"
+                    && e.SourceSchema != "fixture_v1")
+                {
+                    throw new ExportException(
+                        $"Registry entry '{e.DatasetId}' has unsupported source_schema " +
+                        $"'{e.SourceSchema}' (valid: recorder_v1, recorder_v1_1, fixture_v1).");
                 }
 
                 if (!string.Equals(e.PartitionPolicy, PolicyName, StringComparison.Ordinal))

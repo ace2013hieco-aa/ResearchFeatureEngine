@@ -169,6 +169,23 @@ namespace ResearchFeatureEngine.BulkExport
                     + $"'{_entry.LastTimestamp}' != capture '{scan.LastToken}'.");
             }
 
+            // §8 registry schema pin: a DECLARED source_schema must match
+            // the actual capture header exactly. Undeclared keeps M10.1
+            // behavior (header detection alone). A mismatch is a hard
+            // failure — the registry is never permissive about schema.
+            if (!string.IsNullOrWhiteSpace(_entry.SourceSchema)
+                && !string.Equals(
+                    _entry.SourceSchema,
+                    SourceSchema.Name(scan.Kind),
+                    StringComparison.Ordinal))
+            {
+                throw new ExportException(
+                    $"Dataset schema mismatch for '{_datasetId}': registry declares "
+                    + $"'{_entry.SourceSchema}' but the capture header is "
+                    + $"'{SourceSchema.Name(scan.Kind)}'. The registered schema "
+                    + "must match the actual source header.");
+            }
+
             var partition = new Partition(scan.FirstUtc);
             int researchRows = _source.CountBarsBefore(partition.ResearchEndExclusive);
             bool hasHoldout = researchRows < scan.RowCount;

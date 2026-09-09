@@ -62,6 +62,31 @@ regressions, unknown headers, malformed rows, or forbidden characters
 (comma/quote/CR/LF in a field) fail closed — no partial artifact
 survives. An existing target artifact is never overwritten.
 
+### Source schemas (M10.1.x)
+
+| Schema | Exact header | Fields |
+| --- | --- | --- |
+| `recorder_v1_1` | `OpenTimeUtc,Open,High,Low,Close,TickVolume,Spread` | 7 |
+| `recorder_v1` | `OpenTimeUtc,Open,High,Low,Close,TickVolume` | 6 |
+| `fixture_v1` | `DateTime,Open,High,Low,Close,Volume` | 6 |
+
+Every owner-ratified production capture is `recorder_v1_1` (recorder
+spread-recording V1.1, commit `2795dd0`, 2026-09-05). The three
+schemas remain distinct: exact header match, exact field count, no
+optionality inside a schema. In `recorder_v1_1`, `Spread` is validated
+source-field provenance ONLY — the recorder contract (finite,
+non-negative; zero = unavailable-backfill, never fabricated) is
+enforced and a malformed Spread fails closed — but Spread is never an
+engine input (the engine consumes OHLCV only) and never appears in the
+measurement artifact (`measurement-export/1.0.0` columns unchanged).
+Identical OHLCV with different valid spreads produces byte-identical
+measurement artifacts (golden-tested, V11_9).
+
+Registry entries may declare `source_schema` as an exact pin
+(`recorder_v1` / `recorder_v1_1` / `fixture_v1`); a declared value
+that mismatches the actual capture header is a hard failure. Absent
+declaration keeps M10.1 behavior (header detection alone).
+
 ## Research firewall — first calendar year only
 
 **Every registered dataset is partitioned chronologically:**
@@ -113,7 +138,9 @@ artifact?" from the manifest alone.
 
 `registry.json` (shipped empty; production datasets are added by
 owner action at M10.2). Fields: `dataset_id`, `dataset_version`,
-`filename`, `source_sha256` (64 lowercase hex), `first_timestamp`,
+`filename`, `source_sha256` (64 lowercase hex), `source_schema`
+(optional exact pin: `recorder_v1` / `recorder_v1_1` / `fixture_v1`),
+`first_timestamp`,
 `last_timestamp`, `partition_policy`
 (only `first_calendar_year_only` is accepted).
 
