@@ -10,10 +10,11 @@
     <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="cAlgo.API" Version="1.0.0" />
-  </ItemGroup>
-
+  <!-- F1 (M10.3): the core engine assembly is platform-independent —
+       no cTrader API dependency. The cAlgo.API reference moved to the
+       adapter assembly (Adapters/ResearchFeatureEngine.CTrader.csproj),
+       which references this project. Adapter sources are compiled into
+       that assembly, not this one. -->
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>ResearchFeatureEngine.Tests</_Parameter1>
@@ -21,6 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Adapters\**" />
+    <EmbeddedResource Remove="Adapters\**" />
+    <None Remove="Adapters\**" />
     <Compile Remove="Tests\**" />
     <EmbeddedResource Remove="Tests\**" />
     <None Remove="Tests\**" />

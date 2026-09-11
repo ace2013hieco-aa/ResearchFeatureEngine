@@ -35,13 +35,13 @@ namespace ResearchFeatureEngine.Tests
         /// Expected values correspond to the state after processing
         /// the last bar (index 19) via Update().
         ///
-        /// These values were produced by the standalone reference
-        /// program in <c>bin/ComputeExpected</c>, which mirrors the
-        /// algorithm in <c>ATRSmoothReferenceSource</c> line for line
-        /// and was kept independent of the production code. The
-        /// reference production code asserts equality with these
-        /// values to within 8 decimal places, ensuring the
-        /// implementation is bit-equivalent to the documented math.
+        /// These values were produced by a historical standalone
+        /// reference program (tools/ComputeExpected, removed in M10.3
+        /// F3 as a duplicate ATRSmooth mirror) and are now permanently
+        /// pinned here as literals. The reference production code
+        /// asserts equality with these values to within 8 decimal
+        /// places, ensuring the implementation is bit-equivalent to
+        /// the documented math.
         /// </summary>
         public static ExpectedResults CreateKnownDataset()
         {

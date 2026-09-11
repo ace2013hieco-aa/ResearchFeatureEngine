@@ -1,6 +1,4 @@
 using System;
-
-using ResearchFeatureEngine.Adapters;
 using ResearchFeatureEngine.Composition;
 using ResearchFeatureEngine.Core;
 using ResearchFeatureEngine.Normalization.Models;

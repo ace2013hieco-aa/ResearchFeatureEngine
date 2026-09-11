@@ -13,7 +13,10 @@
     <PackageReference Include="cTrader.Automate" Version="1.*" />
   </ItemGroup>
 
+  <!-- F1 (M10.3): CTraderMarketData/CTraderPriceSeries live in the
+       adapter assembly (Applications → Adapters → Core). -->
   <ItemGroup>
+    <ProjectReference Include="..\..\Adapters\ResearchFeatureEngine.CTrader.csproj" />
     <ProjectReference Include="..\..\ResearchFeatureEngine.csproj" />
   </ItemGroup>
 

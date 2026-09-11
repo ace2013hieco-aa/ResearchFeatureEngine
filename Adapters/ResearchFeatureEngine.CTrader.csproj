@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- F1 (M10.3): cTrader adapter assembly. The cAlgo.API dependency
+       lives ONLY here and in the cTrader applications (indicators);
+       the core engine assembly is platform-independent. Adapters may
+       reference Core; Core must never reference this project. -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>ResearchFeatureEngine.Adapters</RootNamespace>
+    <AssemblyName>ResearchFeatureEngine.CTrader</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="cAlgo.API" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ResearchFeatureEngine.csproj" />
+  </ItemGroup>
+
+</Project>

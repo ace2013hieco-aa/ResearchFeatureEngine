@@ -7,11 +7,12 @@ namespace ResearchFeatureEngine.Tests.Reference
 {
     /// <summary>
     /// Golden-dataset correctness tests for the ATR Smooth reference.
-    /// The expected values were produced by the independent standalone
-    /// computation in <c>bin/ComputeExpected</c>, which mirrors the
-    /// algorithm line for line and is NOT linked to the production
-    /// engine. These tests guard against accidental algorithm changes
-    /// that would silently alter the reference price.
+    /// The expected values were produced by a historical standalone
+    /// computation (tools/ComputeExpected, removed in M10.3 F3 as a
+    /// duplicate ATRSmooth mirror) and are now permanently pinned
+    /// here as literals. These tests guard against accidental
+    /// algorithm changes that would silently alter the reference
+    /// price.
     /// </summary>
     public sealed class ATRSmoothReferenceSourceGoldenTests
     {
@@ -53,7 +54,8 @@ namespace ResearchFeatureEngine.Tests.Reference
                 source.Update(ctx);
             }
 
-            // Golden value from bin/ComputeExpected/Program.cs
+            // Golden value from the historical tools/ComputeExpected
+            // program (removed in M10.3 F3); pinned as a literal.
             double expected = 122.37724421291009;
             Assert.Equal(expected, source.Runtime.LastReference, 8);
         }
