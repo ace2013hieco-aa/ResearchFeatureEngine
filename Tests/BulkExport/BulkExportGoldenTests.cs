@@ -276,6 +276,8 @@ namespace ResearchFeatureEngine.Tests.BulkExport
             copy.MeanDarvasClosingDistance.MeanSignedDistance = v.MeanDarvasClosingDistance.MeanSignedDistance;
             copy.MeanHmaAtrSmoothDistance.MeanSignedDistance = v.MeanHmaAtrSmoothDistance.MeanSignedDistance;
             copy.HmaPriceAtrSmoothAlignment.Alignment = v.HmaPriceAtrSmoothAlignment.Alignment;
+            copy.HmaAtrSmoothSeparation.Separation = v.HmaAtrSmoothSeparation.Separation;
+            copy.HmaAtrSmoothRelativeClosePosition.RelativeClosePosition = v.HmaAtrSmoothRelativeClosePosition.RelativeClosePosition;
             return copy;
         }
 
@@ -503,6 +505,12 @@ namespace ResearchFeatureEngine.Tests.BulkExport
                 Assert.Equal(
                     (int)o.HmaPriceAtrSmoothAlignment.Alignment,
                     int.Parse(row[idx("hma_price_atrsmooth_alignment")], CultureInfo.InvariantCulture));
+                Assert.Equal(
+                    o.HmaAtrSmoothSeparation.Separation,
+                    ParseDoubleToken(row[idx("hma_atrsmooth_separation")]));
+                Assert.Equal(
+                    o.HmaAtrSmoothRelativeClosePosition.RelativeClosePosition,
+                    ParseDoubleToken(row[idx("hma_atrsmooth_relative_close_position")]));
             }
         }
 
@@ -514,7 +522,7 @@ namespace ResearchFeatureEngine.Tests.BulkExport
         public void G1b_ModeColumnSets_ConformToRatifiedCounts()
         {
             Assert.Equal(32, Schema.Columns(ExportMode.ATRSmooth2).Length);
-            Assert.Equal(34, Schema.Columns(ExportMode.HmaAtrSmooth).Length);
+            Assert.Equal(36, Schema.Columns(ExportMode.HmaAtrSmooth).Length);
             Assert.Equal(31, Schema.Columns(ExportMode.DarvasBox).Length);
             Assert.Equal(27, Schema.Columns(ExportMode.Hma).Length);
 
@@ -531,6 +539,16 @@ namespace ResearchFeatureEngine.Tests.BulkExport
             // Dual-reference columns ONLY in composite mode
             Assert.Contains("mean_hma_atrsmooth_distance", Schema.Columns(ExportMode.HmaAtrSmooth));
             Assert.DoesNotContain("mean_hma_atrsmooth_distance", Schema.Columns(ExportMode.ATRSmooth2));
+
+            // M11.1 geometry columns ONLY in composite mode
+            Assert.Contains("hma_atrsmooth_separation", Schema.Columns(ExportMode.HmaAtrSmooth));
+            Assert.Contains("hma_atrsmooth_relative_close_position", Schema.Columns(ExportMode.HmaAtrSmooth));
+            foreach (ExportMode other in new[]
+                { ExportMode.ATRSmooth2, ExportMode.DarvasBox, ExportMode.Hma })
+            {
+                Assert.DoesNotContain("hma_atrsmooth_separation", Schema.Columns(other));
+                Assert.DoesNotContain("hma_atrsmooth_relative_close_position", Schema.Columns(other));
+            }
 
             // No TSI/survival/exhaustion variables anywhere (M10.1 §23)
             string[] forbidden = new[]
@@ -1258,7 +1276,7 @@ namespace ResearchFeatureEngine.Tests.BulkExport
                 Assert.Contains("\"engine_commit\": \"0123456789abcdef0123456789abcdef01234567\"", manifest);
 
                 // schema + exporter versions
-                Assert.Contains("\"schema_version\": \"measurement-export/1.0.0\"", manifest);
+                Assert.Contains("\"schema_version\": \"measurement-export/1.1.0\"", manifest);
                 Assert.Contains("\"exporter_version\": \"1.0.0\"", manifest);
 
                 // columns list matches header

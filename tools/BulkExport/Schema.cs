@@ -12,10 +12,14 @@ namespace ResearchFeatureEngine.BulkExport
     /// rewrites the meaning of an existing artifact: additive column
     /// changes bump the minor version; removals/renames/semantic
     /// changes bump the major version.
+    ///
+    /// 1.1.0 (M11.1): the HmaAtrSmooth mode gained the two
+    /// additive M11.1 geometry columns (34 → 36 columns); every
+    /// other mode's column set is unchanged.
     /// </summary>
     public static class Schema
     {
-        public const string Version = "measurement-export/1.0.0";
+        public const string Version = "measurement-export/1.1.0";
         public const string ExporterVersion = "1.0.0";
 
         public static string[] Columns(ExportMode mode)
@@ -95,7 +99,9 @@ namespace ResearchFeatureEngine.BulkExport
                 cols.AddRange(new[]
                 {
                     "mean_hma_atrsmooth_distance",
-                    "hma_price_atrsmooth_alignment"
+                    "hma_price_atrsmooth_alignment",
+                    "hma_atrsmooth_separation",
+                    "hma_atrsmooth_relative_close_position"
                 });
             }
 
@@ -191,6 +197,8 @@ namespace ResearchFeatureEngine.BulkExport
             {
                 row.Add(DoubleToToken(values.MeanHmaAtrSmoothDistance.MeanSignedDistance));
                 row.Add(((int)values.HmaPriceAtrSmoothAlignment.Alignment).ToString(CultureInfo.InvariantCulture));
+                row.Add(DoubleToToken(values.HmaAtrSmoothSeparation.Separation));
+                row.Add(DoubleToToken(values.HmaAtrSmoothRelativeClosePosition.RelativeClosePosition));
             }
 
             return row.ToArray();

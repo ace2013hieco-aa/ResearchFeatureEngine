@@ -17,6 +17,8 @@ namespace ResearchFeatureEngine.Core
             MeanDarvasClosingDistance = new MeanDarvasClosingDistanceRuntimeValues();
             MeanHmaAtrSmoothDistance = new MeanHmaAtrSmoothDistanceRuntimeValues();
             HmaPriceAtrSmoothAlignment = new HmaPriceAtrSmoothAlignmentRuntimeValues();
+            HmaAtrSmoothSeparation = new HmaAtrSmoothSeparationRuntimeValues();
+            HmaAtrSmoothRelativeClosePosition = new HmaAtrSmoothRelativeClosePositionRuntimeValues();
             Scale = new ScaleRuntimeValues();
             Normalization = new NormalizationRuntimeValues();
             Statistics = new StatisticsRuntimeValues();
@@ -80,6 +82,33 @@ namespace ResearchFeatureEngine.Core
         /// (current-bar alignment state).
         /// </summary>
         public HmaPriceAtrSmoothAlignmentRuntimeValues HmaPriceAtrSmoothAlignment { get; }
+
+        #endregion
+
+        #region HMA/ATRSmooth Separation (M11.1)
+
+        /// <summary>
+        /// Gets the HMA/ATRSmooth separation runtime values (M11.1):
+        /// the current-bar normalized structural separation
+        /// (HMA − ATRSmooth) / Scale(14). Published only by the
+        /// HMA + ATRSmooth composite mode; the values remain at
+        /// their unavailable (NaN) defaults in every other mode.
+        /// </summary>
+        public HmaAtrSmoothSeparationRuntimeValues HmaAtrSmoothSeparation { get; }
+
+        #endregion
+
+        #region HMA/ATRSmooth Relative Close Position (M11.1)
+
+        /// <summary>
+        /// Gets the HMA/ATRSmooth relative close position runtime
+        /// values (M11.1): R = (Close − ATRSmooth) / (HMA −
+        /// ATRSmooth), NaN on warm-up and the exact zero-denominator
+        /// geometry. Published only by the HMA + ATRSmooth composite
+        /// mode; the values remain at their unavailable (NaN)
+        /// defaults in every other mode.
+        /// </summary>
+        public HmaAtrSmoothRelativeClosePositionRuntimeValues HmaAtrSmoothRelativeClosePosition { get; }
 
         #endregion
 

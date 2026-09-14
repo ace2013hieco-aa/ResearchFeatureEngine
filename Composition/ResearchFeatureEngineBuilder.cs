@@ -155,6 +155,37 @@ namespace ResearchFeatureEngine.Composition
                     _configuration.StatisticModels,
                     _configuration.Options.StatisticsSource));
 
+            // M11.1 HMA/ATRSmooth geometry measurements: registered
+            // ONLY inside the composite dual-reference type gate,
+            // appended AFTER the Statistics stage because both
+            // stages consume the current-bar canonical Scale value
+            // published by the Scale stage (the placement rule from
+            // MeasurementFamilyAddition.md: a stage is appended
+            // after every producer it consumes). Both stages read
+            // the SAME canonical producer instances the composite
+            // drives — no second HMA source, no second ATRSmooth
+            // source, no reconstruction from price data. Every
+            // other reference mode (ATRSmooth2 / DarvasBox / Hma
+            // alone) never constructs these stages and keeps its
+            // exact previous behavior, with the published values
+            // left at their unavailable (NaN) defaults.
+            if (_configuration.ReferenceSource is Reference.Sources.HmaAtrSmoothCompositeSource compositeSource2)
+            {
+                builder.Add(
+                    new HmaAtrSmoothSeparationEngine(
+                        context,
+                        new HmaAtrSmoothSeparationModel(),
+                        compositeSource2.HmaSource,
+                        compositeSource2.AtrSmoothSource));
+
+                builder.Add(
+                    new HmaAtrSmoothRelativeClosePositionEngine(
+                        context,
+                        new HmaAtrSmoothRelativeClosePositionModel(),
+                        compositeSource2.HmaSource,
+                        compositeSource2.AtrSmoothSource));
+            }
+
             return builder.Build();
         }
     }
