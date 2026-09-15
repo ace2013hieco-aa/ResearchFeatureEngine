@@ -136,7 +136,25 @@ artifact?" from the manifest alone.
 
 ## Registry
 
-`registry.json` (shipped empty; production datasets are added by\nowner action at M10.2). Fields: `dataset_id`, `dataset_version`,\n`filename`, `source_sha256` (64 lowercase hex), `source_schema`\n(optional exact pin: `recorder_v1` / `recorder_v1_1` / `fixture_v1`),\n`first_timestamp`,\n`last_timestamp`, `partition_policy`\n(only `first_calendar_year_only` is accepted).\n\nCurrently registered production datasets (M11.2A):\n\n| dataset_id | source | Year-1 rows |\n| --- | --- | --- |\n| `XAUUSD_Tick25` | 42f17379… | 2,234,316 |\n| `XAUUSD_Tick50` | 8712b720… | 130,665 (control) |\n| `XAUUSD_Tick100` | 5f9e5fbb… | 68,255 |\n| `EURUSD_Tick100` | d7afb803… | (M10.1 certified) |
+`registry.json` (production datasets are added by owner action; M10.2
+and M11.2A admissions are recorded below). Fields: `dataset_id`,
+`dataset_version`, `filename`, `source_sha256` (64 lowercase hex),
+`source_schema` (optional exact pin: `recorder_v1` / `recorder_v1_1` /
+`fixture_v1`), `first_timestamp`, `last_timestamp`, `partition_policy`
+(only `first_calendar_year_only` is accepted).
+
+Currently registered production datasets:
+
+| dataset_id | source | Year-1 rows | status |
+| --- | --- | ---: | --- |
+| `XAUUSD_Tick25` | 42f17379… | 2,234,316 | chain-admitted (M11.2A) |
+| `XAUUSD_Tick50` | 8712b720… | 130,665 | control + artifact-certified (M10.1) |
+| `XAUUSD_Tick100` | 5f9e5fbb… | 68,255 | chain-admitted (M11.2A) |
+| `EURUSD_Tick100` | d7afb803… | 62,155 | artifact-certified (M10.1) |
+
+"Chain-admitted" = source identity pinned + Year-1 invariant verified;
+it does **not** mean the M11.2 production measurement artifact has been
+generated or ratified.
 
 ## Limitations (documented honestly)
 

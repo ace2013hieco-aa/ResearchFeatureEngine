@@ -7,8 +7,9 @@ The core engine assembly has **no cTrader dependencies** — the cTrader API is 
 [![Tests](https://img.shields.io/badge/tests-496%2F496-brightgreen)](#testing)
 
 Total tests: 496.<br>
-M10.1: 34 BulkExport golden tests (G1–G19 + V11_1–V11_12).<br>
-M11.1: 354 reference/engine tests + 2 HmaAtrSmooth geometry tests (pending).
+M10.1: 34 BulkExport golden tests (G1–G19 + V11_1–V11_9).<br>
+M11.1: 354 reference/engine tests + 2 HmaAtrSmooth geometry tests.<br>
+M11.2A: 4 BulkExport source-admission tests (V11_11, V11_12) — 38 golden tests total.
 
 ---
 
@@ -208,7 +209,8 @@ Both .NET SDK 6 and 10 are supported (6 for the engine/adapter/indicator, 10 for
 ## <a name="testing"></a>Testing
 
 - **Full Release suite: 496/496 passing.**
-- **M10.1:** 34 BulkExport golden tests (G1–G19 + V11_1–V11_12). Certified: EURUSD Tick100, XAUUSD Tick25/50/100 (4 reference modes each).
+- **M10.1:** 34 BulkExport golden tests (G1–G19 + V11_1–V11_9). Certified production Year-1 artifacts: EURUSD Tick100, XAUUSD Tick50 (4 reference modes each).
+- **M11.2A:** 38 BulkExport golden tests total (adds V11_11 source-identity pins and V11_12 Year-1 row-count invariants). XAUUSD Tick25 and XAUUSD Tick100 are admitted to the Distance certification chain — source identity + Year-1 invariants only. Their M11.2 production artifacts are **not yet generated**.
 - **M11.1:** 354 reference/engine tests + 2 HmaAtrSmooth geometry tests (HmaAtrSmoothDistance, Alignment).
 - Mathematical correctness (hand-computed golden oracles per reference source), determinism, long-run stability (100k bars), performance benchmarks, real-market-data validation (10k EURUSD M1 bars), and cross-platform consistency.
 - Reversal semantics (regime-transition and close-to-reference modes), re-tick idempotency, lookahead, and real-data comparison against the original indicator.
