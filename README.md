@@ -4,7 +4,11 @@ A platform-independent quantitative research feature engine that transforms mark
 
 The core engine assembly has **no cTrader dependencies** — the cTrader API is referenced only by the adapter assembly and the cTrader applications (see [Architecture boundary](#architecture-boundary)). The same production pipeline drives cTrader, historical backtesting, replay, and research tooling.
 
-[![Tests](https://img.shields.io/badge/tests-461%2F461-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-496%2F496-brightgreen)](#testing)
+
+Total tests: 496.<br>
+M10.1: 34 BulkExport golden tests (G1–G19 + V11_1–V11_12).<br>
+M11.1: 354 reference/engine tests + 2 HmaAtrSmooth geometry tests (pending).
 
 ---
 
@@ -118,7 +122,7 @@ Guarantees:
 
 ### M10 status
 
-Production Year-1 measurement artifacts were certified for **EURUSD Tick100** and **XAUUSD Tick50** (four reference modes each), produced from owner-ratified frozen recorder captures. Artifacts live outside the repository under `out/` (gitignored) and are the handoff surface for downstream research programs. No M11 (HMA/ATRSmooth distance or ratio) measurements exist yet.
+Production Year-1 measurement artifacts were certified for **EURUSD Tick100** and **XAUUSD Tick50** at M10.1 (four reference modes each), produced from owner-ratified frozen recorder captures. **M11.2A** extended the Distance certification chain to admit **XAUUSD Tick25** and **XAUUSD Tick100** — both registered with SHA-256 pins and verified Year-1 row-count invariants (2,234,316 and 68,255 respectively; Tick50 at 130,665 is the unchanged control). Artifacts live outside the repository under `out/` (gitignored) and are the handoff surface for downstream research programs.
 
 ---
 
@@ -203,7 +207,9 @@ Both .NET SDK 6 and 10 are supported (6 for the engine/adapter/indicator, 10 for
 
 ## <a name="testing"></a>Testing
 
-- **Full Release suite: 461/461 passing.**
+- **Full Release suite: 496/496 passing.**
+- **M10.1:** 34 BulkExport golden tests (G1–G19 + V11_1–V11_12). Certified: EURUSD Tick100, XAUUSD Tick25/50/100 (4 reference modes each).
+- **M11.1:** 354 reference/engine tests + 2 HmaAtrSmooth geometry tests (HmaAtrSmoothDistance, Alignment).
 - Mathematical correctness (hand-computed golden oracles per reference source), determinism, long-run stability (100k bars), performance benchmarks, real-market-data validation (10k EURUSD M1 bars), and cross-platform consistency.
 - Reversal semantics (regime-transition and close-to-reference modes), re-tick idempotency, lookahead, and real-data comparison against the original indicator.
 - M9 segment stage: hand-computed golden oracle, adversarial price-crossing fixtures (10 000 real EURUSD M1 bars), executable invariants, reset/replay determinism.

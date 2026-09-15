@@ -1,6 +1,6 @@
 # BulkExport — Canonical Measurement Export (M10)
 
-Schema `measurement-export/1.0.0` · Exporter `1.0.0` · Milestone M10.1
+Schema `measurement-export/1.1.0` · Exporter `1.0.0` · Milestone M11.2A
 
 ## What this tool is
 
@@ -32,11 +32,11 @@ error · `3` unexpected failure.
 ## Supported modes and column sets
 
 | Mode | Columns | Extra families |
-| --- | --- | --- |
-| `atrsmooth2` | 32 | M9 segment (RegimeId/StartIndex/Age/Transition) |
-| `hmaatrsmooth` | 34 | segment + mean HMA–ATRSmooth distance + alignment |
-| `darvasbox` | 31 | Darvas box distances (no segment family — the M9 stage is not registered for Darvas compositions) |
-| `hma` | 27 | base families only |
+|| --- | --- | --- |
+|| `atrsmooth2` | 32 | M9 segment (RegimeId/StartIndex/Age/Transition) |
+|| `hmaatrsmooth` | 36 | segment + mean HMA–ATRSmooth distance + alignment + M11.1 separation/relative-close-position |
+|| `darvasbox` | 31 | Darvas box distances (no segment family — the M9 stage is not registered for Darvas compositions) |
+|| `hma` | 27 | base families only |
 
 Base families (all modes): identity/source bar (verbatim tokens),
 reference (price + regime), distance/scale/normalized, statistics
@@ -136,13 +136,7 @@ artifact?" from the manifest alone.
 
 ## Registry
 
-`registry.json` (shipped empty; production datasets are added by
-owner action at M10.2). Fields: `dataset_id`, `dataset_version`,
-`filename`, `source_sha256` (64 lowercase hex), `source_schema`
-(optional exact pin: `recorder_v1` / `recorder_v1_1` / `fixture_v1`),
-`first_timestamp`,
-`last_timestamp`, `partition_policy`
-(only `first_calendar_year_only` is accepted).
+`registry.json` (shipped empty; production datasets are added by\nowner action at M10.2). Fields: `dataset_id`, `dataset_version`,\n`filename`, `source_sha256` (64 lowercase hex), `source_schema`\n(optional exact pin: `recorder_v1` / `recorder_v1_1` / `fixture_v1`),\n`first_timestamp`,\n`last_timestamp`, `partition_policy`\n(only `first_calendar_year_only` is accepted).\n\nCurrently registered production datasets (M11.2A):\n\n| dataset_id | source | Year-1 rows |\n| --- | --- | --- |\n| `XAUUSD_Tick25` | 42f17379… | 2,234,316 |\n| `XAUUSD_Tick50` | 8712b720… | 130,665 (control) |\n| `XAUUSD_Tick100` | 5f9e5fbb… | 68,255 |\n| `EURUSD_Tick100` | d7afb803… | (M10.1 certified) |
 
 ## Limitations (documented honestly)
 
@@ -162,11 +156,18 @@ owner action at M10.2). Fields: `dataset_id`, `dataset_version`,
 - Duplicate source timestamps are preserved and counted in the
   manifest (never repaired — known recorder artifacts).
 
-## M10.2 (not yet authorized)
+## M10.2 / M11.2A status
 
-Production runs will register the frozen captures (XAUUSD Tick50,
-EURUSD Tick100, …) and export their first-year research windows.
-Targets (empirical acceptance, not assumptions): 6.6M-bar capture
-≤ 30 min, < 2 GB. Measured M10.1 benchmark: 527,040 research rows
-exported from a 1,000,000-bar capture in 24.3 s at ~65 MB peak RSS
-(Release, single process).
+**M11.2A (current milestone):** The Distance certification chain now admits
+**XAUUSD Tick25**, **XAUUSD Tick50**, and **XAUUSD Tick100** — all three
+registered with SHA-256 pins and verified Year-1 row-count invariants.
+Tick50 (130,665) serves as the unchanged control; Tick25 yields 2,234,316
+research rows and Tick100 yields 68,255. EURUSD Tick100 was certified at
+M10.1. The first calendar year of each dataset is the research window;
+all subsequent bars are the sealed holdout.
+
+Production runs will export the first-year research windows of the
+ratified frozen captures. Targets (empirical acceptance, not assumptions):
+6.6M-bar capture ≤ 30 min, < 2 GB. Measured M10.1 benchmark: 527,040
+research rows exported from a 1,000,000-bar capture in 24.3 s at ~65 MB
+peak RSS (Release, single process).

@@ -1,5 +1,15 @@
 [
   {
+    "dataset_id": "XAUUSD_Tick25",
+    "dataset_version": "v1",
+    "filename": "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick25_All.csv",
+    "source_sha256": "42f17379b8d7eb0d34afbc1c5569cc6549f633509cf1c5dcd3ef319d0e61a8d1",
+    "source_schema": "recorder_v1_1",
+    "first_timestamp": "2025-06-15T23:59:43.5760000Z",
+    "last_timestamp": "2026-09-04T20:54:56.4390000Z",
+    "partition_policy": "first_calendar_year_only"
+  },
+  {
     "dataset_id": "XAUUSD_Tick50",
     "dataset_version": "v1",
     "filename": "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick50_All.csv",
@@ -7,6 +17,16 @@
     "source_schema": "recorder_v1_1",
     "first_timestamp": "2013-07-24T06:00:59.2240000Z",
     "last_timestamp": "2026-09-07T11:33:20.1590000Z",
+    "partition_policy": "first_calendar_year_only"
+  },
+  {
+    "dataset_id": "XAUUSD_Tick100",
+    "dataset_version": "v1",
+    "filename": "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick100_All.csv",
+    "source_sha256": "5f9e5fbb8ec9dffcf9e20ad56bfe7f3966d55341b2e7363871fef3f7d5cc3798",
+    "source_schema": "recorder_v1_1",
+    "first_timestamp": "2014-02-20T00:15:36.6590000Z",
+    "last_timestamp": "2026-09-14T10:19:15.4630000Z",
     "partition_policy": "first_calendar_year_only"
   },
   {

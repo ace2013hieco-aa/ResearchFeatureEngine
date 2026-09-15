@@ -1895,5 +1895,79 @@ namespace ResearchFeatureEngine.Tests.BulkExport
                 "d7afb8039c2a6370cb969d7e722414aa3e1d973cd33266dbf706b2125decc9d9",
                 Sha256File("C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\EURUSD_Tick100_All (10).csv"));
         }
+
+        // M11.2A — XAUUSD Tick25/Tick100 source admission pins
+        // ---------------------------------------------------------------
+        // Source-admission: both captures are newly registered to the
+        // Distance certification chain (Tick50 was already certified by
+        // V11_10 above; it is the unchanged control). The SHA pins fail
+        // closed on any future source substitution.
+
+        private const string XAUUSD_Tick25_Sha =
+            "42f17379b8d7eb0d34afbc1c5569cc6549f633509cf1c5dcd3ef319d0e61a8d1";
+        private const string XAUUSD_Tick50_Sha =
+            "8712b7207529e60b4b42bfbdcd7b36467046e2ee127c95dfc0c40d6920e6f3e6";
+        private const string XAUUSD_Tick100_Sha =
+            "5f9e5fbb8ec9dffcf9e20ad56bfe7f3966d55341b2e7363871fef3f7d5cc3798";
+
+        private const string XAUUSD_Tick25_Path =
+            "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick25_All.csv";
+        private const string XAUUSD_Tick50_Path =
+            "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick50_All.csv";
+        private const string XAUUSD_Tick100_Path =
+            "C:\\Users\\Ali Zoghi\\OneDrive\\Documents\\cTrader\\Exports\\XAUUSD_Tick100_All.csv";
+
+        [Fact]
+        public void V11_11_XAUUSD_SourceIdentity_Pinned()
+        {
+            // §11 — pins the three XAUUSD source identities admitted to
+            // the Distance chain. Tick25/Tick100 are newly admitted this
+            // phase; Tick50 is the unchanged control. Byte substitution
+            // of any capture fails this gate.
+            Assert.Equal(XAUUSD_Tick50_Sha, Sha256File(XAUUSD_Tick50_Path));
+            Assert.Equal(XAUUSD_Tick25_Sha, Sha256File(XAUUSD_Tick25_Path));
+            Assert.Equal(XAUUSD_Tick100_Sha, Sha256File(XAUUSD_Tick100_Path));
+        }
+
+        [Theory]
+        // §7 – independently reproduced via certified Scan -> Partition
+        // -> CountBarsBefore machinery (tools/BulkExport CsvBarSource).
+        // The two paths agree exactly (Path B: independent streaming
+        // scan over frozen bytes, documented in the M11.2A report).
+        // Tick50 is the pre-certified control (130,665).
+        [InlineData(XAUUSD_Tick25_Path, XAUUSD_Tick25_Sha,
+            "2025-06-15T23:59:43.5760000Z", 2234316)]
+        [InlineData(XAUUSD_Tick50_Path, XAUUSD_Tick50_Sha,
+            "2013-07-24T06:00:59.2240000Z", 130665)]
+        [InlineData(XAUUSD_Tick100_Path, XAUUSD_Tick100_Sha,
+            "2014-02-20T00:15:36.6590000Z", 68255)]
+        public void V11_12_XAUUSD_Year1Invariant(
+            string capturePath,
+            string expectedSha,
+            string firstTimestamp,
+            int expectedResearchRows)
+        {
+            // §9.2 — fail closed if the source has been substituted
+            Assert.Equal(expectedSha, Sha256File(capturePath));
+
+            var source = new CsvBarSource(capturePath);
+            ScanResult scan = source.Scan();
+
+            // §3 / §5 boundary: first bar + 1 calendar year (AddYears,
+            // leap-correct) — exactly as the engine computes it.
+            DateTime firstUtc = DateTime.Parse(
+                firstTimestamp, CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            var partition = new Partition(firstUtc);
+
+            int researchRows = source.CountBarsBefore(partition.ResearchEndExclusive);
+
+            Assert.Equal(expectedResearchRows, researchRows);
+
+            // Total rows in source must exceed the research window
+            // (i.e. the capture genuinely spans the boundary).
+            Assert.True((int)scan.RowCount > researchRows,
+                "source must contain holdout rows for the invariant to be meaningful");
+        }
     }
 }
