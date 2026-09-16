@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build engine
+        run: dotnet build ResearchFeatureEngine.csproj --nologo
+
+      # G19 (CLI end-to-end golden test) shells out to this DLL,
+      # so it must be built before the test run.
+      - name: Build BulkExport
+        run: dotnet build tools/BulkExport/BulkExport.csproj --nologo
+
+      - name: Test (496 tests)
+        run: dotnet test Tests/ResearchFeatureEngine.Tests.csproj --nologo -v minimal
