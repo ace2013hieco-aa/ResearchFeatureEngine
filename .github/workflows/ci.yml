@@ -30,5 +30,7 @@ jobs:
       - name: Build BulkExport
         run: dotnet build tools/BulkExport/BulkExport.csproj --nologo
 
-      - name: Test (496 tests)
-        run: dotnet test Tests/ResearchFeatureEngine.Tests.csproj --nologo -v minimal
+            # V11_10-V11_12 pin private local captures (author's PC only);
+      # everything else is portable and runs here.
+      - name: Test (491 portable tests)
+        run: dotnet test Tests/ResearchFeatureEngine.Tests.csproj --nologo -v minimal --filter "FullyQualifiedName!~V11_10&FullyQualifiedName!~V11_11&FullyQualifiedName!~V11_12"
