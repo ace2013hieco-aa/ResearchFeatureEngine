@@ -5,6 +5,7 @@ A platform-independent quantitative research feature engine that transforms mark
 The core engine assembly has **no cTrader dependencies** — the cTrader API is referenced only by the adapter assembly and the cTrader applications (see [Architecture boundary](#architecture-boundary)). The same production pipeline drives cTrader, historical backtesting, replay, and research tooling.
 
 [![Tests](https://img.shields.io/badge/tests-496%2F496-brightgreen)](#testing)
+[![CI](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml)
 
 Total tests: 496.<br>
 M10.1: 34 BulkExport golden tests (G1–G19 + V11_1–V11_9).<br>
