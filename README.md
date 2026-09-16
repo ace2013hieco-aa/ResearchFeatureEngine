@@ -7,7 +7,7 @@ The core engine assembly has **no cTrader dependencies** — the cTrader API is 
 [![Tests](https://img.shields.io/badge/tests-496%2F496-brightgreen)](#testing)
 [![CI](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml)
 
-Total tests: 496.<br>
+Total tests: 496 (CI runs the 491 portable tests; 5 source-identity tests `V11_10`–`V11_12` pin private local captures and run only on the author's machine).<br>
 M10.1: 34 BulkExport golden tests (G1–G19 + V11_1–V11_9).<br>
 M11.1: 354 reference/engine tests + 2 HmaAtrSmooth geometry tests.<br>
 M11.2A: 4 BulkExport source-admission tests (V11_11, V11_12) — 38 golden tests total.
