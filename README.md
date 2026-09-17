@@ -14,6 +14,29 @@ M11.2A: 4 BulkExport source-admission tests (V11_11, V11_12) — 38 golden tests
 
 ---
 
+## Architecture
+
+```
+Market Data → Reference → Distance → (Darvas / HMA composites) →
+  Regime Segment → Reversal → Scale → Normalization → Statistics → EngineValues
+```
+
+A single published-value surface (`EngineValues`) reaches every consumer — indicators, BulkExport, tests, tooling — with no duplicated mathematics. See [`docs/architecture.svg`](docs/architecture.svg) for the layered diagram (applications → adapters → core with the boundary line), and [`Project Vision and Architecture.md`](Project%20Vision%20and%20Architecture.md) for the full architecture write-up.
+
+---
+
+## Adapters
+
+| Platform | Status | Surface |
+|---|---|---|
+| **cTrader indicator** | ✅ Shipped | `Adapters/ResearchFeatureEngine.CTrader` |
+| **Python (CSV harness)** | ✅ Shipped | `tools/CTraderHarness` |
+| **Python adapter (`pip install research-feature-engine`)** | 🚧 Planned | pythonnet wrapper, PyPI release |
+| **MT5 indicator** | 🚧 Planned | C# wrapper DLL + MQL5 indicator |
+| **MT4 indicator** | ❌ Out of scope | — |
+
+---
+
 ## Pipeline
 
 The canonical measurement pipeline, in registration order:
@@ -251,4 +274,4 @@ Tests/               xUnit tests + test data (EURUSD_M1_10000.csv)
 
 ## License
 
-See the repository for license details.
+[MIT](LICENSE) — Copyright (c) 2026 Osat Zoghi.

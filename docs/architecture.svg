@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="600" fill="#ffffff"/>
+
+  <!-- title -->
+  <text x="480" y="32" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">ResearchFeatureEngine &#xb7; Architecture</text>
+  <text x="480" y="54" text-anchor="middle" font-size="12" fill="#64748b">one core, many adapters, golden-tested pipeline</text>
+
+  <!-- ============ APPLICATIONS BAND ============ -->
+  <rect x="40" y="76" width="880" height="74" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="56" y="96" font-size="11" font-weight="700" fill="#1d4ed8">APPLICATIONS</text>
+  <text x="135" y="96" font-size="11" fill="#1e40af">&#xb7; thin consumers of EngineValues &#xb7; no math</text>
+
+  <g font-size="12" fill="#0f172a">
+    <rect x="80" y="110" width="240" height="28" rx="4" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="200" y="129" text-anchor="middle">cTrader indicator</text>
+    <rect x="360" y="110" width="240" height="28" rx="4" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="480" y="129" text-anchor="middle">Python tools &#xb7; notebooks</text>
+    <rect x="640" y="110" width="240" height="28" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-dasharray="4,3"/>
+    <text x="760" y="129" text-anchor="middle" fill="#64748b">MT5 indicator (planned)</text>
+  </g>
+
+  <line x1="480" y1="150" x2="480" y2="178" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="488" y="170" font-size="10" fill="#475569">consume EngineValues</text>
+
+  <!-- ============ ADAPTERS BAND ============ -->
+  <rect x="40" y="184" width="880" height="138" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="56" y="204" font-size="11" font-weight="700" fill="#6d28d9">ADAPTERS</text>
+  <text x="115" y="204" font-size="11" fill="#5b21b6">&#xb7; platform-specific I/O &#xb7; no engine mathematics</text>
+
+  <g font-size="12" fill="#0f172a">
+    <rect x="80" y="220" width="240" height="90" rx="4" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="200" y="240" text-anchor="middle" font-weight="600">cTrader adapter</text>
+    <text x="200" y="259" text-anchor="middle" font-size="10" fill="#475569">cAlgo.API references</text>
+    <text x="200" y="275" text-anchor="middle" font-size="10" fill="#475569">CTraderMarketData</text>
+    <text x="200" y="291" text-anchor="middle" font-size="10" fill="#475569">CTraderPriceSeries</text>
+
+    <rect x="360" y="220" width="240" height="90" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-dasharray="4,3"/>
+    <text x="480" y="240" text-anchor="middle" font-weight="600" fill="#6d28d9">Python adapter (planned)</text>
+    <text x="480" y="259" text-anchor="middle" font-size="10" fill="#475569">pythonnet wrapper</text>
+    <text x="480" y="275" text-anchor="middle" font-size="10" fill="#475569">pandas DataFrame in/out</text>
+    <text x="480" y="291" text-anchor="middle" font-size="10" fill="#475569">research-feature-engine</text>
+
+    <rect x="640" y="220" width="240" height="90" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-dasharray="4,3"/>
+    <text x="760" y="240" text-anchor="middle" font-weight="600" fill="#6d28d9">MT5 adapter (planned)</text>
+    <text x="760" y="259" text-anchor="middle" font-size="10" fill="#475569">C# wrapper DLL</text>
+    <text x="760" y="275" text-anchor="middle" font-size="10" fill="#475569">MQL5 indicator #import</text>
+    <text x="760" y="291" text-anchor="middle" font-size="10" fill="#475569">cross-platform parity</text>
+  </g>
+
+  <line x1="480" y1="322" x2="480" y2="350" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="488" y="342" font-size="10" fill="#475569">IMarketData / IPriceSeries</text>
+
+  <!-- ============ BOUNDARY ============ -->
+  <line x1="40" y1="356" x2="920" y2="356" stroke="#f59e0b" stroke-width="2" stroke-dasharray="10,4"/>
+  <rect x="240" y="346" width="480" height="22" rx="11" fill="#fffbeb" stroke="#f59e0b" stroke-width="1"/>
+  <text x="480" y="361" text-anchor="middle" font-size="11" font-weight="700" fill="#b45309">&#x2191; CORE BOUNDARY &#xb7; no cAlgo / MQL5 / Win32 above this line &#x2191;</text>
+
+  <!-- ============ CORE BAND ============ -->
+  <rect x="40" y="378" width="880" height="138" rx="6" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
+  <text x="56" y="398" font-size="11" font-weight="700" fill="#047857">CORE</text>
+  <text x="92" y="398" font-size="11" fill="#065f46">&#xb7; platform-independent .NET 6 &#xb7; 491/491 CI tests &#xb7; deterministic</text>
+
+  <g font-size="11" fill="#0f172a">
+    <rect x="60" y="414" width="110" height="60" rx="4" fill="#d1fae5" stroke="#10b981"/>
+    <text x="115" y="434" text-anchor="middle" font-weight="700" fill="#065f46">1 &#xb7; Reference</text>
+    <text x="115" y="451" text-anchor="middle" font-size="10" fill="#475569">ATRSmooth &#xb7; Darvas</text>
+    <text x="115" y="465" text-anchor="middle" font-size="10" fill="#475569">HMA &#xb7; Composite</text>
+
+    <line x1="170" y1="444" x2="206" y2="444" stroke="#059669" stroke-width="1.5" marker-end="url(#arrGreen)"/>
+
+    <rect x="206" y="414" width="110" height="60" rx="4" fill="#d1fae5" stroke="#10b981"/>
+    <text x="261" y="434" text-anchor="middle" font-weight="700" fill="#065f46">2 &#xb7; Distance</text>
+    <text x="261" y="451" text-anchor="middle" font-size="10" fill="#475569">close &#x2212; reference</text>
+    <text x="261" y="465" text-anchor="middle" font-size="10" fill="#475569">signed &#xb7; abs</text>
+
+    <line x1="316" y1="444" x2="352" y2="444" stroke="#059669" stroke-width="1.5" marker-end="url(#arrGreen)"/>
+
+    <rect x="352" y="414" width="110" height="60" rx="4" fill="#d1fae5" stroke="#10b981"/>
+    <text x="407" y="434" text-anchor="middle" font-weight="700" fill="#065f46">3 &#xb7; Reversal</text>
+    <text x="407" y="451" text-anchor="middle" font-size="10" fill="#475569">strict regime</text>
+    <text x="407" y="465" text-anchor="middle" font-size="10" fill="#475569">transition</text>
+
+    <line x1="462" y1="444" x2="498" y2="444" stroke="#059669" stroke-width="1.5" marker-end="url(#arrGreen)"/>
+
+    <rect x="498" y="414" width="110" height="60" rx="4" fill="#d1fae5" stroke="#10b981"/>
+    <text x="553" y="434" text-anchor="middle" font-weight="700" fill="#065f46">4 &#xb7; Scale</text>
+    <text x="553" y="451" text-anchor="middle" font-size="10" fill="#475569">characteristic</text>
+    <text x="553" y="465" text-anchor="middle" font-size="10" fill="#475569">ATR</text>
+
+    <line x1="608" y1="444" x2="644" y2="444" stroke="#059669" stroke-width="1.5" marker-end="url(#arrGreen)"/>
+
+    <rect x="644" y="414" width="110" height="60" rx="4" fill="#d1fae5" stroke="#10b981"/>
+    <text x="699" y="434" text-anchor="middle" font-weight="700" fill="#065f46">5 &#xb7; Normalize</text>
+    <text x="699" y="451" text-anchor="middle" font-size="10" fill="#475569">distance / scale</text>
+    <text x="699" y="465" text-anchor="middle" font-size="10" fill="#475569">dimensionless</text>
+
+    <line x1="754" y1="444" x2="790" y2="444" stroke="#059669" stroke-width="1.5" marker-end="url(#arrGreen)"/>
+
+    <rect x="790" y="414" width="110" height="60" rx="4" fill="#d1fae5" stroke="#10b981"/>
+    <text x="845" y="434" text-anchor="middle" font-weight="700" fill="#065f46">6 &#xb7; Statistics</text>
+    <text x="845" y="451" text-anchor="middle" font-size="10" fill="#475569">mean &#xb7; std</text>
+    <text x="845" y="465" text-anchor="middle" font-size="10" fill="#475569">skew &#xb7; kurt &#xb7; &#x2026;</text>
+  </g>
+
+  <line x1="845" y1="474" x2="845" y2="490" stroke="#059669" stroke-width="1.2"/>
+  <rect x="340" y="490" width="560" height="20" rx="10" fill="#a7f3d0" stroke="#10b981"/>
+  <text x="620" y="504" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">EngineValues &#x2014; single published-value surface (one writer, many readers)</text>
+
+  <text x="480" y="540" text-anchor="middle" font-size="11" fill="#64748b">EngineBase template-method &#xb7; ResearchFeatureEngineBuilder (type-gated) &#xb7; BulkExport reads only EngineValues</text>
+  <text x="480" y="558" text-anchor="middle" font-size="10" fill="#94a3b8">MIT &#xb7; ace2013hieco-aa/ResearchFeatureEngine</text>
+</svg>
