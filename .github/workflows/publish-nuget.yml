@@ -7,10 +7,11 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
-    name: Pack & publish ResearchFeatureEngine to NuGet.org
+    name: Pack & publish ResearchFeatureEngine to NuGet.org (OIDC trusted publishing)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -38,10 +39,10 @@ jobs:
         run: dotnet pack ResearchFeatureEngine.csproj -c Release --no-restore -o ./artifacts
 
       - name: Push package (.nupkg)
-        run: dotnet nuget push "./artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "./artifacts/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "oidc" --skip-duplicate
 
       - name: Push symbols (.snupkg)
-        run: dotnet nuget push "./artifacts/*.snupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "./artifacts/*.snupkg" --source https://api.nuget.org/v3/index.json --api-key "oidc" --skip-duplicate
         continue-on-error: true
 
       - name: Upload artifacts
