@@ -8,6 +8,21 @@
     <Nullable>enable</Nullable>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+
+    <!-- NuGet package metadata (v0.1.0) -->
+    <IsPackable>true</IsPackable>
+    <PackageId>ResearchFeatureEngine</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Osat Zoghi</Authors>
+    <Description>Platform-independent quantitative research pipeline (Reference → Distance → Scale → Normalize → Statistics). The same .NET 6 core drives cTrader, Python, and MT5 surfaces; correctness verified by 491 portable golden tests.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/ace2013hieco-aa/ResearchFeatureEngine</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>quantitative-finance;algorithmic-trading;backtesting;ctrader;csharp;indicator;research;platform-independent;net6</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <!-- F1 (M10.3): the core engine assembly is platform-independent —
@@ -19,6 +34,10 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>ResearchFeatureEngine.Tests</_Parameter1>
     </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
