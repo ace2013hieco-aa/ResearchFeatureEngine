@@ -10,9 +10,12 @@ permissions:
 
 jobs:
   publish:
-    name: Pack & publish ResearchFeatureEngine to NuGet.org
+    name: Pack & publish ResearchFeatureEngine to NuGet.org (OIDC trusted publishing)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
       - name: Checkout
@@ -37,15 +40,17 @@ jobs:
       - name: Pack (Release)
         run: dotnet pack ResearchFeatureEngine.csproj -c Release --no-restore -o ./artifacts
 
+      - name: NuGet login (OIDC → temp API key)
+        id: nugetLogin
+        uses: NuGet/login@v1
+        with:
+          user: ace2013hieco-aa
+
       - name: Push package (.nupkg)
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push "./artifacts/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+        run: dotnet nuget push "./artifacts/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ steps.nugetLogin.outputs.NUGET_API_KEY }} --skip-duplicate
 
       - name: Push symbols (.snupkg)
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push "./artifacts/*.snupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+        run: dotnet nuget push "./artifacts/*.snupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ steps.nugetLogin.outputs.NUGET_API_KEY }} --skip-duplicate
         continue-on-error: true
 
       - name: Upload artifacts
