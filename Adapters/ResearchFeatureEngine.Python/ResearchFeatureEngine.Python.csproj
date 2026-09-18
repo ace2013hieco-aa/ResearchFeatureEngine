@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- F1 (M10.3): Python adapter assembly. Provides Python-friendly helpers
+       (IMarketData adapter for pandas DataFrames) that wrap the
+       platform-independent Core. The public PyPI package
+       (research-feature-engine) loads this DLL + Core via pythonnet
+       and exposes a Pythonic API on top. References Core only; does
+       NOT reference any platform adapter (cTrader/MT5). Core must never
+       reference this project. -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>ResearchFeatureEngine.Adapters</RootNamespace>
+    <AssemblyName>ResearchFeatureEngine.Python</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+    <!-- Output to the same directory as Core so pythonnet can load
+         both assemblies from a single data directory. -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ResearchFeatureEngine.csproj" />
+  </ItemGroup>
+
+</Project>

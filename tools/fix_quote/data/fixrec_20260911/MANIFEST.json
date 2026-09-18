@@ -1,0 +1,54 @@
+{
+ "bar_ticks": 25,
+ "completed_utc": "2026-09-11T19:00:00Z",
+ "files": {
+  "bars_USDJPY_t25.csv": {
+   "bars": 465,
+   "bytes": 33258,
+   "first_bar": "2026-09-11T17:28:39.674+00:00",
+   "full_25": 464,
+   "last_bar": "2026-09-11T18:59:54.859+00:00",
+   "partial": 1,
+   "sha256": "19ff443df1edd0e4fe758cce7e093070819f1210367e24e00ce60b1d3995acf6"
+  },
+  "bars_XAUUSD_t25.csv": {
+   "bars": 720,
+   "bytes": 50789,
+   "first_bar": "2026-09-11T17:28:39.672+00:00",
+   "full_25": 719,
+   "last_bar": "2026-09-11T18:59:55.592+00:00",
+   "partial": 1,
+   "sha256": "73fdf3b93cbc53021b8ec2df1a9dac7912ea228c27eb37503ea0ba267d406588"
+  },
+  "run.log": {
+   "bytes": 2616,
+   "reconnects": 0,
+   "sha256": "c579c34857df337b5ccf589cff22e8954a64af0ebf5794a3dc792af2d3712727",
+   "wall_s": 5482
+  },
+  "ticks_USDJPY.csv": {
+   "bytes": 653145,
+   "first": "2026-09-11T17:28:39.674+00:00",
+   "last": "2026-09-11T18:59:59.873+00:00",
+   "sha256": "2441389b768169e108ee4198e7379b47b4cc00af0058b67ceb6f199f5ba523a9",
+   "spread_max": 0.009,
+   "spread_min": 0.0,
+   "ticks": 11613,
+   "zero_spread_ticks": 216
+  },
+  "ticks_XAUUSD.csv": {
+   "bytes": 992637,
+   "first": "2026-09-11T17:28:39.672+00:00",
+   "last": "2026-09-11T19:00:00.102+00:00",
+   "sha256": "e3cc901d081b74e46973141264c9f1a807e6a72d21e9273dab8103ab88ebb578",
+   "spread_max": 0.19,
+   "spread_min": 0.08,
+   "ticks": 17992,
+   "zero_spread_ticks": 0
+  }
+ },
+ "notes": "zero-spread ticks (bid==ask) are broker quote artifacts, recorded verbatim; no inverted quotes",
+ "ohlc_basis": "bid",
+ "run": "fixrec_20260911",
+ "session": "FIX QUOTE (Pepperstone live)"
+}

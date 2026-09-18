@@ -1,0 +1,25 @@
+# BulkExport / M10.2 exports — full engine, all files
+tools/BulkExport/bin/
+tools/BulkExport/obj/
+tools/BulkExport/registry.json
+# BulkExport artifacts (M10.2 production exports, uncommitted)
+out/
+
+# Build outputs
+bin/
+obj/
+
+# FIX quote harness — out of audit scope
+tools/fix_quote/
+
+# Docs / state notes (not source)
+Current State.md
+Project Vision and Architecture.md
+integration.txt
+diagnostic_report.txt
+
+# Old stale build leftovers
+obj_disabled_archive/
+Debug_disabled_archive/
+_stale_*/
+ATRsmooth2/

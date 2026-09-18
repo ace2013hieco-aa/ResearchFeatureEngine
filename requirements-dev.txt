@@ -1,0 +1,9 @@
+# Development dependencies for research-feature-engine
+# Install with: pip install -r requirements-dev.txt
+
+pythonnet>=3.0.0
+pandas>=1.5
+numpy>=1.24
+pytest>=7.0
+pytest-asyncio>=0.21
+matplotlib>=3.6

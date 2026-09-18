@@ -1,0 +1,80 @@
+[build-system]
+requires = ["hatchling>=1.27.0", "wheel"]
+build-backend = "hatchling.build"
+
+[project]
+name = "research-feature-engine"
+dynamic = ["version"]
+description = "Python binding (via pythonnet) for the ResearchFeatureEngine .NET 6 quant research pipeline."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+  { name = "Osat Zoghi", email = "osat@zoghi.io" },
+]
+keywords = [
+  "quantitative-finance",
+  "algorithmic-trading",
+  "backtesting",
+  "technical-indicators",
+  "research",
+  "pythonnet",
+  "dotnet",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "pythonnet>=3.0.0",
+  "pandas>=1.5",
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "matplotlib>=3.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/ace2013hieco-aa/ResearchFeatureEngine"
+Documentation = "https://github.com/ace2013hieco-aa/ResearchFeatureEngine#readme"
+Repository = "https://github.com/ace2013hieco-aa/ResearchFeatureEngine"
+"Bug Tracker" = "https://github.com/ace2013hieco-aa/ResearchFeatureEngine/issues"
+
+[tool.hatch.version]
+path = "research_feature_engine/__init__.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests_python"]
+minversion = "7.0"
+
+[tool.hatch.build.targets.sdist]
+packages = ["research_feature_engine"]
+include = [
+  "research_feature_engine/**/*",
+  "README.md",
+  "CHANGELOG.md",
+  "LICENSE",
+  "build_dlls.py",
+  "requirements-dev.txt",
+  "examples/",
+  "tests_python/",
+  "pyproject.toml",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["research_feature_engine"]

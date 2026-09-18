@@ -4,13 +4,32 @@ A platform-independent quantitative research feature engine that transforms mark
 
 The core engine assembly has **no cTrader dependencies** — the cTrader API is referenced only by the adapter assembly and the cTrader applications (see [Architecture boundary](#architecture-boundary)). The same production pipeline drives cTrader, historical backtesting, replay, and research tooling.
 
-[![Tests](https://img.shields.io/badge/tests-496%2F496-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-517%2F517-brightgreen)](#testing)
 [![CI](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml)
 
-Total tests: 496 (CI runs the 491 portable tests; 5 source-identity tests `V11_10`–`V11_12` pin private local captures and run only on the author's machine).<br>
+Total tests: 496 .NET (CI runs the 491 portable tests; 5 source-identity tests `V11_10`–`V11_12` pin private local captures and run only on the author's machine) + 26 Python (`tests_python/`).<br>
 M10.1: 34 BulkExport golden tests (G1–G19 + V11_1–V11_9).<br>
 M11.1: 354 reference/engine tests + 2 HmaAtrSmooth geometry tests.<br>
 M11.2A: 4 BulkExport source-admission tests (V11_11, V11_12) — 38 golden tests total.
+
+---
+
+## Quick Start (Python)
+
+```bash
+pip install research-feature-engine
+```
+
+```python
+from research_feature_engine import HmaAtrSmooth, MarketData
+
+md = MarketData.from_csv("Tests/TestData/EURUSD_M1_10000.csv")
+engine = HmaAtrSmooth(md, atr_period=14, atr_multiplier=2.0, smooth_length=100)
+df = engine.run()
+print(df[["reference_price", "scale", "mean", "std_dev"]].head())
+```
+
+> **Note:** This package uses pythonnet to load the .NET 6 core engine. The `PYTHONNET_RUNTIME` environment variable is automatically set to `coreclr` at import time — no manual configuration needed. On Linux/macOS, install .NET 6 runtime first.
 
 ---
 
@@ -31,8 +50,8 @@ A single published-value surface (`EngineValues`) reaches every consumer — ind
 |---|---|---|
 | **cTrader indicator** | ✅ Shipped | `Adapters/ResearchFeatureEngine.CTrader` |
 | **Python (CSV harness)** | ✅ Shipped | `tools/CTraderHarness` |
-| **Python adapter (`pip install research-feature-engine`)** | 🚧 Planned | pythonnet wrapper, PyPI release |
-| **MT5 indicator** | 🚧 Planned | C# wrapper DLL + MQL5 indicator |
+| **Python adapter (`pip install research-feature-engine`)** | ✅ Shipped | pythonnet wrapper + PyPI release |
+| **MT5 adapter** | 🚧 Planned | C# wrapper DLL + MQL5 indicator |
 | **MT4 indicator** | ❌ Out of scope | — |
 
 ---
@@ -212,6 +231,45 @@ The indicator renders in a dedicated sub-pane (`IsOverlay = false`), so it does 
 
 ---
 
+## Python adapter
+
+The `research-feature-engine` package provides a pythonnet-based Python binding to the .NET 6 core engine. It ships prebuilt DLLs as package data, so no .NET build step is needed after install.
+
+```bash
+pip install research-feature-engine
+```
+
+```python
+from research_feature_engine import HmaAtrSmooth, MarketData
+
+md = MarketData.from_csv("EURUSD_M1_10000.csv")
+engine = HmaAtrSmooth(md)
+df = engine.run()
+print(df[["reference_price", "directional_distance", "scale"]].head())
+```
+
+The four reference modes are available as `ATRSmooth2`, `DarvasBox`, `Hma`, and `HmaAtrSmooth`. Each accepts an optional `EngineOptions` for statistics window, reversal mode, and statistics source.
+
+### Quick build & test (development)
+
+```bash
+# Build the .NET DLLs into research_feature_engine/data/
+python build_dlls.py
+
+# Install in editable mode
+pip install -e ".[dev]"
+
+# Run Python tests
+pytest tests_python/
+
+# Run the example scripts
+python examples/basic_indicator.py
+python examples/multi_engine_pipeline.py
+python examples/pandas_integration.py
+```
+
+---
+
 ## Build & test
 
 ```bash
@@ -232,7 +290,7 @@ Both .NET SDK 6 and 10 are supported (6 for the engine/adapter/indicator, 10 for
 
 ## <a name="testing"></a>Testing
 
-- **Full Release suite: 496/496 passing.**
+- **Full Release suite: 517/517 passing** (496 .NET + 26 Python).
 - **M10.1:** 34 BulkExport golden tests (G1–G19 + V11_1–V11_9). Certified production Year-1 artifacts: EURUSD Tick100, XAUUSD Tick50 (4 reference modes each).
 - **M11.2A:** 38 BulkExport golden tests total (adds V11_11 source-identity pins and V11_12 Year-1 row-count invariants). XAUUSD Tick25 and XAUUSD Tick100 are admitted to the Distance certification chain — source identity + Year-1 invariants only. Their M11.2 production artifacts are **not yet generated**.
 - **M11.1:** 354 reference/engine tests + 2 HmaAtrSmooth geometry tests (HmaAtrSmoothDistance, Alignment).
@@ -265,10 +323,18 @@ Composition/         ResearchFeatureEngine, builder, configuration, options,
 Models/             EngineValues + per-stage runtime values and models
 Interfaces/         IMarketData, IPriceSeries, IEngine
 Adapters/           CTrader adapter ASSEMBLY (ResearchFeatureEngine.CTrader):
-                     CTraderMarketData, CTraderPriceSeries (cAlgo.API here)
+                    CTraderMarketData, CTraderPriceSeries (cAlgo.API here)
+                    ResearchFeatureEngine.Python — pythonnet adapter (PythonMarketData,
+                    PythonEngineFactory)
 Indicators/          cTrader applications (thin adapters, no math)
+pyproject.toml       Python package build config (hatchling)
+build_dlls.py        Build .NET DLLs into research_feature_engine/data/
+research_feature_engine/  Python package (engine.py, market_data.py, data/)
+tests_python/        Python pytest suite (26 tests)
+examples/            Three example scripts (basic_indicator, multi_engine_pipeline,
+                    pandas_integration)
 tools/               BulkExport (canonical measurement export),
-                     CTraderHarness (CSV runner)
+                    CTraderHarness (CSV runner)
 Tests/               xUnit tests + test data (EURUSD_M1_10000.csv)
 ```
 

@@ -62,6 +62,22 @@ desktop.ini
 Tests/TestResults/
 Tests/**/*.trx
 
-# Tool scratch ----------------------------------------------------------------
+# Python artifacts -----------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+wheelhouse/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
 
-.freebuff/
+# Tool scratch ----------------------------------------------------------------
+.freebuff/"

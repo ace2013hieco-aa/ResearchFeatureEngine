@@ -1,0 +1,61 @@
+name: publish-pypi
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build & publish research-feature-engine to PyPI
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Build .NET DLLs
+        run: python build_dlls.py
+
+      - name: Build wheel & sdist
+        run: |
+          pip install hatchling
+          python -m pip wheel . --no-deps -w wheelhouse/
+          python -m build --sdist --outdir wheelhouse/ 2>/dev/null || true
+          ls -la wheelhouse/
+
+      - name: Publish to PyPI (OIDC trusted publishing)
+        uses: pypa/gh-action-pypi-helpers@release/v1
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: wheelhouse/
+          if-no-files-found: ignore
