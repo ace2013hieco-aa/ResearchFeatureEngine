@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-<TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -26,13 +26,24 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ResearchFeatureEngine.csproj" />
+    <ProjectReference Include="..\Adapters\ResearchFeatureEngine.MT5\ResearchFeatureEngine.MT5.csproj" />
   </ItemGroup>
+
+  <!-- MT5 test requires the stub definition (MqlRates struct) -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);MT5_STUB</DefineConstants>
+  </PropertyGroup>
 
   <!-- M10.1: BulkExport tool sources compile into the test assembly
        (InternalsVisibleTo from the tool project is for the built
        exe; tests exercise the runner directly here). -->
   <ItemGroup>
     <Compile Include="..\tools\BulkExport\**\*.cs" Exclude="..\tools\BulkExport\obj\**\*.cs;..\tools\BulkExport\Program.cs" LinkBase="BulkExport" />
+  </ItemGroup>
+
+  <!-- MT5 adapter validation tests -->
+  <ItemGroup>
+    <Compile Include="..\Adapters\ResearchFeatureEngine.MT5\MT5MarketDataTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

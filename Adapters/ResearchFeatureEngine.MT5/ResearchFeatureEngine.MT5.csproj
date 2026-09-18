@@ -38,6 +38,11 @@
     <ProjectReference Include="..\..\ResearchFeatureEngine.csproj" />
   </ItemGroup>
 
+  <!-- Exclude test files from the adapter assembly -->
+  <ItemGroup>
+    <Compile Remove="**\*Tests.cs" />
+  </ItemGroup>
+
   <!-- Reference MetaTrader5.dll if the path is provided, otherwise
        compile against a local stub for build/CI validation. -->
   <ItemGroup Condition="$(MT5DllPath) != ''">

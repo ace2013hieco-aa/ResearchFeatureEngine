@@ -54,7 +54,21 @@ def main() -> None:
         print("[build_dlls] ERROR: dotnet CLI not found.")
         sys.exit(1)
 
-    # Restore + build Core
+    # Restore is required before --no-restore build; fresh environments have
+    # no NuGet cache and will fail with NETSDK1127 without this step.
+    print("[build_dlls] Restoring packages ...")
+    subprocess.run(
+        ["dotnet", "restore", str(CORE_CSPROJ), "--nologo"],
+        cwd=ROOT,
+        check=True,
+    )
+    subprocess.run(
+        ["dotnet", "restore", str(PY_ADAPTER_CSPROJ), "--nologo"],
+        cwd=ROOT,
+        check=True,
+    )
+
+    # Build Core
     print("[build_dlls] Building Core ...")
     subprocess.run(
         ["dotnet", "build", str(CORE_CSPROJ), "-c", config, "--nologo", "--no-restore"],
@@ -62,7 +76,7 @@ def main() -> None:
         check=True,
     )
 
-    # Restore + build Python adapter
+    # Build Python adapter
     print("[build_dlls] Building Python adapter ...")
     subprocess.run(
         ["dotnet", "build", str(PY_ADAPTER_CSPROJ), "-c", config, "--nologo", "--no-restore"],
@@ -72,11 +86,10 @@ def main() -> None:
 
     # The Python adapter's csproj sets OutputPath to ..\..\bin\$(Configuration)\
     # so both DLLs end up in the same shared bin directory.
-    # Also check the default adapter output as a fallback.
     out_dirs = [
-        ROOT / "bin" / config,                                                       # shared output (both DLLs)
-        ROOT / "bin" / config / "net6.0",                                           # Core default output
-        ROOT / "Adapters" / "ResearchFeatureEngine.Python" / "bin" / config,        # adapter fallback
+        ROOT / "bin" / config,
+        ROOT / "bin" / config / "net6.0",
+        ROOT / "Adapters" / "ResearchFeatureEngine.Python" / "bin" / config,
     ]
 
     # Clean data dir — tolerate locked files (DLL may be in use by

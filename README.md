@@ -4,10 +4,13 @@ A platform-independent quantitative research feature engine that transforms mark
 
 The core engine assembly has **no platform-specific dependencies** — the cTrader and MT5 APIs are referenced only by their respective adapter assemblies and the applications that use them (see [Architecture boundary](#architecture-boundary)). The same production pipeline drives cTrader, MT5, historical backtesting, replay, and research tooling.
 
-[![Tests](https://img.shields.io/badge/tests-517%2F517-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-526%2F526-brightgreen)](#testing)
 [![CI](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml)
 
-Total tests: 496 .NET (CI runs the 491 portable tests; 5 source-identity tests `V11_10`–`V11_12` pin private local captures and run only on the author's machine) + 26 Python (`tests_python/`).<br>
+**Test breakdown:**
+- **505 .NET** — 491 portable CI tests + 5 private/local-only tests (`V11_10`–`V11_12` pin private local captures, run only on the author's machine) + 9 MT5 adapter validation tests
+- **26 Python** (`tests_python/`) — run on Windows CI (pythonnet/.NET 6 interop requires Windows)
+- **CI runs:** 500 .NET (491 portable + 9 MT5 adapter tests, excluding 5 private-only) + 26 Python = 526 total tests
 M10.1: 34 BulkExport golden tests (G1–G19 + V11_1–V11_9).<br>
 M11.1: 354 reference/engine tests + 2 HmaAtrSmooth geometry tests.<br>
 M11.2A: 4 BulkExport source-admission tests (V11_11, V11_12) — 38 golden tests total.
@@ -297,7 +300,7 @@ Both .NET SDK 6 and 10 are supported (6 for the engine/adapter/indicator, 10 for
 
 ## <a name="testing"></a>Testing
 
-- **Full Release suite: 517/517 passing** (496 .NET + 26 Python).
+- **Full Release suite: 526/526 passing** (500 .NET + 26 Python).
 - **M10.1:** 34 BulkExport golden tests (G1–G19 + V11_1–V11_9). Certified production Year-1 artifacts: EURUSD Tick100, XAUUSD Tick50 (4 reference modes each).
 - **M11.2A:** 38 BulkExport golden tests total (adds V11_11 source-identity pins and V11_12 Year-1 row-count invariants). XAUUSD Tick25 and XAUUSD Tick100 are admitted to the Distance certification chain — source identity + Year-1 invariants only. Their M11.2 production artifacts are **not yet generated**.
 - **M11.1:** 354 reference/engine tests + 2 HmaAtrSmooth geometry tests (HmaAtrSmoothDistance, Alignment).

@@ -21,8 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Development dependencies** (`requirements-dev.txt`): pythonnet, pandas, numpy, pytest
 - **Python `.gitignore` entries**: `__pycache__/`, `.pytest_cache/`, `wheelhouse/`, etc.
 
+### Added
+- **MT5 adapter scaffold**: `Adapters/ResearchFeatureEngine.MT5/` with `MT5MarketData.cs` (implements `IMarketData` wrapping `MqlRates[]`), `ResearchFeatureEngine.MT5.csproj` (stub compilation without MetaTrader5.dll), `RFEMT5Indicator.mq5` (MQL5 application), `RFEMT5Bridge.cpp` (native C ABI bridge documentation), and `MT5MarketDataTests.cs` (9 xUnit validation tests for adapter behavior)
+- **CI fix**: `build_dlls.py` now runs `dotnet restore` before `--no-restore` build — fixes `NETSDK1127` failure on fresh GitHub Actions runners
+
 ### Changed
-- README updated: Python adapter status from 🚧 Planned → ✅ Shipped; added Python usage quick-start section; updated test counts (517 total)
+- README updated: test counts to 526/526 (500 .NET + 26 Python), added MT5 adapter entry, architecture boundary text generalized, removed MT4 out-of-scope row
 
 ## [0.1.0] - 2026-09-17
 
