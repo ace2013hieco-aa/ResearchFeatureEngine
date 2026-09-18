@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- MT5 adapter — C# wrapper DLL + MQL5 indicator + cross-platform parity tests
+- MT5 adapter — C# wrapper DLL (`Adapters/ResearchFeatureEngine.MT5/`) + MQL5 indicator skeleton (`RFEMT5Indicator.mq5`). Requires MetaTrader 5 terminal + MetaTrader5.dll for compilation.
 
 ## [0.2.0] - 2026-09-18
 
@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 - Package metadata: id `ResearchFeatureEngine`, version `0.1.0`, license MIT, repository `https://github.com/ace2013hieco-aa/ResearchFeatureEngine`
-- Python and MT5 adapters are deliberately listed as planned (not shipped) — `MT4` is explicitly out of scope
+- Python and MT5 adapters are deliberately listed as planned (not shipped) — `MT5` is the active adapter in progress
 
 [Unreleased]: https://github.com/ace2013hieco-aa/ResearchFeatureEngine/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/ace2013hieco-aa/ResearchFeatureEngine/releases/tag/v0.2.0

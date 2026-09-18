@@ -2,7 +2,7 @@
 
 A platform-independent quantitative research feature engine that transforms market data into deterministic, mathematically defined research features through a composable pipeline.
 
-The core engine assembly has **no cTrader dependencies** — the cTrader API is referenced only by the adapter assembly and the cTrader applications (see [Architecture boundary](#architecture-boundary)). The same production pipeline drives cTrader, historical backtesting, replay, and research tooling.
+The core engine assembly has **no platform-specific dependencies** — the cTrader and MT5 APIs are referenced only by their respective adapter assemblies and the applications that use them (see [Architecture boundary](#architecture-boundary)). The same production pipeline drives cTrader, MT5, historical backtesting, replay, and research tooling.
 
 [![Tests](https://img.shields.io/badge/tests-517%2F517-brightgreen)](#testing)
 [![CI](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ace2013hieco-aa/ResearchFeatureEngine/actions/workflows/ci.yml)
@@ -40,7 +40,7 @@ Market Data → Reference → Distance → (Darvas / HMA composites) →
   Regime Segment → Reversal → Scale → Normalization → Statistics → EngineValues
 ```
 
-A single published-value surface (`EngineValues`) reaches every consumer — indicators, BulkExport, tests, tooling — with no duplicated mathematics. See [`docs/architecture.svg`](docs/architecture.svg) for the layered diagram (applications → adapters → core with the boundary line), and [`Project Vision and Architecture.md`](Project%20Vision%20and%20Architecture.md) for the full architecture write-up.
+A single published-value surface (`EngineValues`) reaches every consumer — indicators (cTrader, MT5), BulkExport, tests, tooling — with no duplicated mathematics. See [`docs/architecture.svg`](docs/architecture.svg) for the layered diagram (applications → adapters → core with the boundary line), and [`Project Vision and Architecture.md`](Project%20Vision%20and%20Architecture.md) for the full architecture write-up.
 
 ---
 
@@ -51,8 +51,7 @@ A single published-value surface (`EngineValues`) reaches every consumer — ind
 | **cTrader indicator** | ✅ Shipped | `Adapters/ResearchFeatureEngine.CTrader` |
 | **Python (CSV harness)** | ✅ Shipped | `tools/CTraderHarness` |
 | **Python adapter (`pip install research-feature-engine`)** | ✅ Shipped | pythonnet wrapper + PyPI release |
-| **MT5 adapter** | 🚧 Planned | C# wrapper DLL + MQL5 indicator |
-| **MT4 indicator** | ❌ Out of scope | — |
+| **MT5 adapter** | 🚧 In progress | C# wrapper DLL + MQL5 indicator (compilation stub pending MT5 SDK) |
 
 ---
 
@@ -173,15 +172,15 @@ Production Year-1 measurement artifacts were certified for **EURUSD Tick100** an
 ## Architecture boundary
 
 ```
-Applications (cTrader indicators, tools)
-    ↓ reference
-Adapters (ResearchFeatureEngine.CTrader assembly — cAlgo.API)
-    ↓ reference
-Core (ResearchFeatureEngine assembly — pure engine abstractions,
-      models, algorithms; NO cTrader API, NO adapter reference)
+| Application (cTrader indicator + tools)
+|    ↓ reference
+| Adapters (ResearchFeatureEngine.CTrader assembly — cAlgo.API)
+|    ↓ reference
+| Core (ResearchFeatureEngine assembly — pure engine abstractions,
+|      models, algorithms; NO platform API, NO adapter reference)
 ```
 
-- The **core engine** (`ResearchFeatureEngine.csproj`) is platform-independent: its project references contain no cTrader API package and its sources contain no cTrader-specific dependency — a future accidental cTrader dependency inside Core is a compile error, not a silent linkage.
+- The **core engine** (`ResearchFeatureEngine.csproj`) is platform-independent: its project references contain no platform API packages (no cAlgo.API, no MetaTrader5) and its sources contain no platform-specific dependency — a future accidental platform dependency inside Core is a compile error, not a silent linkage.
 - The **adapter assembly** (`Adapters/ResearchFeatureEngine.CTrader.csproj`) references Core and `cAlgo.API`, and owns `CTraderMarketData` / `CTraderPriceSeries` (adapting cTrader `Bars`/`DataSeries` to the platform-independent `IMarketData`/`IPriceSeries`).
 - **Applications** (the indicators under `Indicators/`) reference Core and the adapter; the adapter is a thin layer with no engine mathematics.
 - The dependency direction is one-way: Core never references Adapters or Applications.
@@ -279,6 +278,14 @@ dotnet build ResearchFeatureEngine.csproj
 # Build the cTrader adapter assembly
 dotnet build Adapters/ResearchFeatureEngine.CTrader.csproj
 
+# Build the Python adapter assembly
+dotnet build Adapters/ResearchFeatureEngine.Python/ResearchFeatureEngine.Python.csproj
+
+# Build the MT5 adapter assembly (compiles against internal stub; pass
+# -p:MT5DllPath="C:\Program Files\MetaTrader 5\MetaTrader5.dll" when
+# the MT5 terminal is installed)
+dotnet build Adapters/ResearchFeatureEngine.MT5/ResearchFeatureEngine.MT5.csproj
+
 # Build the cTrader indicator (application)
 dotnet build Indicators/ResearchFeatureEngineIndicator/ResearchFeatureEngineIndicator.csproj
 
@@ -326,6 +333,9 @@ Adapters/           CTrader adapter ASSEMBLY (ResearchFeatureEngine.CTrader):
                     CTraderMarketData, CTraderPriceSeries (cAlgo.API here)
                     ResearchFeatureEngine.Python — pythonnet adapter (PythonMarketData,
                     PythonEngineFactory)
+                    ResearchFeatureEngine.MT5 — MT5 adapter (MT5MarketData,
+                    MT5PriceSeries; compiles against stub, reference MetaTrader5.dll
+                    when MT5DllPath is set)
 Indicators/          cTrader applications (thin adapters, no math)
 pyproject.toml       Python package build config (hatchling)
 build_dlls.py        Build .NET DLLs into research_feature_engine/data/

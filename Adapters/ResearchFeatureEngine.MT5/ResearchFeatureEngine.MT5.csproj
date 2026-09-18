@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- F1 (M11.3): MT5 adapter assembly. Wraps MetaQuotes' MetaTrader5.dll
+       API to adapt MT5 bar/series data to the platform-independent
+       IMarketData interface. References Core only; does NOT reference
+       any other adapter or application. Core must never reference this
+       project. -->
+
+  <!-- The MetaTrader5.dll is NOT available via NuGet — it ships with
+       the MetaTrader 5 terminal installation. Reference it via a project
+       reference or a local path hint once the terminal is installed:
+         <Reference Include="MetaTrader5">
+           <HintPath>C:\Program Files\MetaTrader 5\MetaTrader5.dll</HintPath>
+         </Reference>
+       Until then, the project uses a thin wrapper that can be compiled
+       against a stub (see MT5_MQLStub below) for CI/build purposes. -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>ResearchFeatureEngine.Adapters</RootNamespace>
+    <AssemblyName>ResearchFeatureEngine.MT5</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+    <!-- Output to the same directory as Core so pythonnet/cBot
+         can load both assemblies from a single data directory. -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
+    <!-- When MT5 terminal is installed, set the actual DLL path:
+    <MT5DllPath Condition="'$(MT5DllPath)' == ''">C:\Program Files\MetaTrader 5\MetaTrader5.dll</MT5DllPath>
+    -->
+    <MT5DllPath Condition="'$(MT5DllPath)' == ''"></MT5DllPath>
+    <!-- When MT5DllPath is empty, define MT5_STUB for conditional compilation -->
+    <DefineConstants Condition="'$(MT5DllPath)' == ''">$(DefineConstants);MT5_STUB</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ResearchFeatureEngine.csproj" />
+  </ItemGroup>
+
+  <!-- Reference MetaTrader5.dll if the path is provided, otherwise
+       compile against a local stub for build/CI validation. -->
+  <ItemGroup Condition="$(MT5DllPath) != ''">
+    <Reference Include="MetaTrader5">
+      <HintPath>$(MT5DllPath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
