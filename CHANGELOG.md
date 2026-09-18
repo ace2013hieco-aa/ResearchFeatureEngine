@@ -1,0 +1,31 @@
+# Changelog
+
+All notable changes to ResearchFeatureEngine are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Planned
+- Python adapter (`pip install research-feature-engine`) — pythonnet wrapper + PyPI release
+- MT5 indicator — C# wrapper DLL + MQL5 indicator + cross-platform parity tests
+- Examples directory (Jupyter notebooks and Python scripts)
+
+## [0.1.0] - 2026-09-17
+
+### Added
+- **NuGet package**: Core now ships as `ResearchFeatureEngine` on [nuget.org](https://www.nuget.org/packages/ResearchFeatureEngine) — `dotnet add package ResearchFeatureEngine`
+- **Symbol package** (`.snupkg`) for stack-trace and debug support
+- **GitHub Actions CI** (`.github/workflows/ci.yml`): build + test on every push and PR to master. Runs the 491 portable tests; the 5 source-identity tests (`V11_10`–`V11_12`) are pinned to private local captures and run only on the author's machine.
+- **Tag-triggered publish workflow** (`.github/workflows/publish-nuget.yml`): on `v*` tag push, packs Release and publishes to NuGet.org via OIDC trusted publishing (no API key stored anywhere)
+- **MIT license** (`LICENSE`) — Copyright (c) 2026 Osat Zoghi
+- **Architecture diagram** (`docs/architecture.svg`): 3-layer view (applications → adapters → core) with the no-platform-deps boundary called out explicitly
+- **README polish**: Architecture section, Adapters table (shipped / planned / out of scope), corrected license link
+
+### Notes
+- Package metadata: id `ResearchFeatureEngine`, version `0.1.0`, license MIT, repository `https://github.com/ace2013hieco-aa/ResearchFeatureEngine`
+- Python and MT5 adapters are deliberately listed as planned (not shipped) — `MT4` is explicitly out of scope
+
+[Unreleased]: https://github.com/ace2013hieco-aa/ResearchFeatureEngine/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ace2013hieco-aa/ResearchFeatureEngine/releases/tag/v0.1.0

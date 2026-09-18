@@ -5,6 +5,9 @@ bin/
 obj/
 out/
 
+# `dotnet pack -o <dir>` output directory
+artifacts/
+
 # Old/stale leftovers from mixed-target framework builds
 Debug_disabled_archive/
 _stale_*/
