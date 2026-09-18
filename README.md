@@ -54,7 +54,7 @@ A single published-value surface (`EngineValues`) reaches every consumer — ind
 | **cTrader indicator** | ✅ Shipped | `Adapters/ResearchFeatureEngine.CTrader` |
 | **Python (CSV harness)** | ✅ Shipped | `tools/CTraderHarness` |
 | **Python adapter (`pip install research-feature-engine`)** | ✅ Shipped | pythonnet wrapper + PyPI release |
-| **MT5 adapter** | 🚧 In progress | C# wrapper DLL + MQL5 indicator (compilation stub pending MT5 SDK) |
+| **MT5 adapter** | 🚧 In progress | C# wrapper DLL + MQL5 indicator + native C ABI bridge stub (`Adapters/ResearchFeatureEngine.MT5/RFEMT5Bridge/`) |
 
 ---
 
